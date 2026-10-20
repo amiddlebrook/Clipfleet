@@ -70,7 +70,7 @@ A companion `artifacts/clip.json` contains the campaign URL, caption, render fin
 3. Run GitHub Actions **Deploy Cloudflare Worker** once. It creates D1, applies the migration, deploys the Worker and securely sets `ADMIN_TOKEN` from your secret. Verify `https://clipfleet-ops.<your-subdomain>.workers.dev/api/health` returns `ok:true`.
 4. The pipeline automatically discovers the `CLIPFLEET_WORKER_URL` using your Cloudflare account ID and API token. You may override it with the repository variable of that name. If `CLIPFLEET_ADMIN_TOKEN` is missing, deployment generates a random unshared admin credential; the public dashboard and cron discovery work, but private admin operations and job imports cannot be used until you add your admin secret and redeploy.
 5. Visit your new Worker homepage to view the public campaign index. For administrative controls, paste your **administrator token in the browser** (kept in memory, not localStorage); click **Connect dashboard** and **Scan public directory**. The dashboard lists campaign links, model, rate, remaining budget and render jobs.
-6. The **ClipFleet Pipeline** Actions workflow runs every six hours, imports verified public campaign details, plans jobs for *previously approved campaigns*, and renders at most two videos/run. Upload artifacts include the MP4 and manifest. Nothing is auto-posted or auto-submitted.
+6. The **ClipFleet Pipeline** Actions workflow runs every six hours, imports public campaign details directly into D1 using Cloudflare API credentials, plans jobs for *previously approved campaigns*, and renders at most two videos/run. Upload artifacts include the MP4 and manifest. Nothing is auto-posted or auto-submitted.
 
 **No repo available?** Keep using the local CLI and zip. The archive is a complete standalone project with tests, migrations, Worker, dashboard, scheduled jobs, and a demo config.
 
@@ -126,3 +126,6 @@ Setup-ClipFleet.ps1         Optional zero-cost GitHub repository setup
 ```
 
 **Security:** Authenticate the `/api/*` endpoints with a randomly generated bearer token stored as a Cloudflare Worker secret. Do not publish video assets or confidential campaign briefs in a public GitHub repository. Use authorized, public, non-sensitive brand media and verify licensing; store private assets only in authorized private storage when required. Repository ZIPs and Action artifacts may expose material to people who can access the repository. The demo is not penetration-tested or enterprise certified.
+
+
+**Live discovery without an admin token:** A scheduled GitHub pipeline fetches publicly accessible campaigns and imports their ranking data to D1 using the already-configured scoped Cloudflare API credentials. Read-only dashboard browsing is public. Production approval, claim, and rendering still require a separate `CLIPFLEET_ADMIN_TOKEN` GitHub secret, genuine eligibility, and licensed footage. Public campaign information is neither verified creator eligibility nor a guarantee of available sponsor budget.

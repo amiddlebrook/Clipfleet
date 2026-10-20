@@ -1,10 +1,5 @@
 name: ClipFleet Pipeline (free-tier bounded)
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/agent-loop.yml'
-      - 'clipfleet/**'
   schedule:
     - cron: '15 */6 * * *'
   workflow_dispatch: {}
@@ -43,11 +38,12 @@ jobs:
           fi
       - name: Discover and score public campaigns
         run: python -m clipfleet discover --max-details 25 --output artifacts/discovered.json
-      - name: Index opportunities in Cloudflare D1 (if connected)
+      - name: Import public campaign intelligence directly into Cloudflare D1
+        if: ${{ env.CLOUDFLARE_ACCOUNT_ID != '' && env.CLOUDFLARE_API_TOKEN != '' }}
+        run: python -m clipfleet import-d1 --file artifacts/discovered.json
+      - name: Plan previously reviewed and approved campaigns
         if: ${{ env.CLIPFLEET_WORKER_URL != '' && env.CLIPFLEET_ADMIN_TOKEN != '' }}
-        run: |
-          python -m clipfleet upload --file artifacts/discovered.json
-          python -m clipfleet plan
+        run: python -m clipfleet plan
       - name: Render authorized jobs, max 2 per run
         if: ${{ env.CLIPFLEET_WORKER_URL != '' && env.CLIPFLEET_ADMIN_TOKEN != '' }}
         run: python -m clipfleet batch --max-jobs 2 --output-dir artifacts

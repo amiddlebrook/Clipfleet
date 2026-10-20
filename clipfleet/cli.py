@@ -53,6 +53,11 @@ def cmd_upload(args):
     else: print('No verified public campaign details to import')
 
 
+def cmd_import_d1(args):
+    from .d1_import import import_public_campaigns
+    import_public_campaigns(args.file)
+
+
 def cmd_render(args):
     job=load_json(args.job)
     if args.variant < 0 or args.variant > 2: raise ValueError('Variant must be 0, 1, or 2')
@@ -113,6 +118,7 @@ def main(argv=None):
     sub=ap.add_subparsers(dest='cmd',required=True)
     p=sub.add_parser('discover');p.add_argument('--max-details',type=int,default=30);p.add_argument('--output',default='artifacts/discovered.json');p.add_argument('--upload',action='store_true');p.set_defaults(fn=cmd_discover)
     p=sub.add_parser('upload');p.add_argument('--file',default='artifacts/discovered.json');p.set_defaults(fn=cmd_upload)
+    p=sub.add_parser('import-d1');p.add_argument('--file',default='artifacts/discovered.json');p.set_defaults(fn=cmd_import_d1)
     p=sub.add_parser('render');p.add_argument('--job',required=True);p.add_argument('--output',default='artifacts/clip.mp4');p.add_argument('--variant',type=int,default=0);p.set_defaults(fn=cmd_render)
     p=sub.add_parser('plan');p.set_defaults(fn=cmd_plan)
     p=sub.add_parser('worker');p.add_argument('route',nargs='?',default='/api/campaigns');p.set_defaults(fn=cmd_worker)
