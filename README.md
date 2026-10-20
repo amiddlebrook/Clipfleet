@@ -29,6 +29,20 @@ For account verification, [follow the official Content Rewards guide](https://he
 
 **No change to publishing:** ClipFleet's scheduled pipeline still prepares video artifacts for review, not unattended Content Rewards submissions, and nothing here guarantees earnings.
 
+## Guided campaign autopilot (new)
+
+Start at **[ClipFleet's deployed dashboard](https://clipfleet-ops.averymiddlebrook2014.workers.dev)**, connect your administrator token, and select a campaign in **Campaign Autopilot**.
+
+The new **10-step guided workflow** shows one next action at a time: join → social connection → brief → rights → approved profile → render → review → publish → submit → record outcome. Each manual step provides an official campaign, social, GitHub, or Content Rewards help link; each confirmation is timestamped and saved in Cloudflare D1. Profile authorization and finished render jobs advance automatically from real application records, not user clicks.
+
+- An editable AI brief assistant and saved public social-account presets reduce repetitive entry, but never certify eligibility, license rights or social OAuth.
+- Each completed render now records its exact GitHub Actions run URL so the matching MP4 is easier to find.
+- After manually submitting a public post on Content Rewards, **Start tracking another clip** retains prior approvals and records separate submissions; old videos cannot be reused as new submissions.
+- The 30-minute countdown uses your reported publishing time; it cannot verify whether a social platform or Content Rewards accepted the video.
+- A recorded sponsor outcome is self-reported and not verified payment or guaranteed earnings.
+
+See **[the complete guided operating instructions](docs/GUIDED-WORKFLOW.md)**. Publishing and Content Rewards submissions are still separate authorized actions; this app does not scrape sessions or bypass account restrictions.
+
 ## What runs on a schedule
 
 | Component | Action | Automation |
