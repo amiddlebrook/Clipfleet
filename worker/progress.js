@@ -32,7 +32,7 @@ async function snapshot(env,id){
  if(!campaign)return null;
  const tracking=await env.DB.prepare('SELECT state,revision,updated_at FROM campaign_workflows WHERE campaign_id=?').bind(id).first();
  const trusted=await env.DB.prepare('SELECT campaign_id,enabled,reviewed_at FROM trusted_campaigns WHERE campaign_id=?').bind(id).first();
- const list=await env.DB.prepare('SELECT id,status,created_at,completed_at FROM jobs WHERE campaign_id=? ORDER BY created_at DESC LIMIT 35').bind(id).all();
+ const list=await env.DB.prepare('SELECT id,status,created_at,completed_at,actions_run_url FROM jobs WHERE campaign_id=? ORDER BY created_at DESC LIMIT 35').bind(id).all();
  const jobs=list.results||[];
  const submissionsResult=await env.DB.prepare('SELECT id,job_id,platform,published_url,published_at,submitted_at,submission_reference,outcome,updated_at FROM campaign_submissions WHERE campaign_id=? ORDER BY submitted_at DESC LIMIT 50').bind(id).all();
  const submissions=submissionsResult.results||[];
