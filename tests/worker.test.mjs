@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import worker from '../worker/index.js';
 const CID='5ad699cd-7aed-44f7-9b57-489fdd6e2628';
 function setup(){
- const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));
+ const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));
  const DB={prepare:(q)=>({bind(...args){this.args=args;return this},async first(){return sql.prepare(q).get(...(this.args||[]))||null},async run(){return {meta:{changes:sql.prepare(q).run(...(this.args||[])).changes}}},async all(){return {results:sql.prepare(q).all(...(this.args||[]))}}})};
  return {sql,env:{DB,ADMIN_TOKEN:'abcdef0123456789abcdef0123456789'}};
 }
@@ -20,7 +20,7 @@ test('worker: authentication and full approved render queue lifecycle',async()=>
  const imported=await call(env,'/api/import','POST',{campaigns:[{id:CID,title:'Test campaign',model:'per_post',rate:10,budget_remaining:1000,accepting:true}]});
  assert.deepEqual(imported.json,{imported:1});
  const denied=await call(env,'/api/profiles','POST',{campaign_id:CID,verified_eligibility:true});assert.equal(denied.code,400);
- const profile={campaign_id:CID,verified_eligibility:true,assets_licensed:true,rights_evidence:'approved test asset',brief_reviewed:true,allows_original_graphic:true,max_variants:2,product_name:'Demo brand',approved_value_prop:'Accurate test fact',approved_cta:'Visit official page',required_caption:'#ad'};
+ const profile={campaign_id:CID,verified_eligibility:true,assets_licensed:true,rights_evidence:'approved test asset',brief_reviewed:true,allows_original_graphic:true,max_variants:2,product_name:'Demo brand',approved_value_prop:'Accurate test fact',approved_cta:'Visit official page',required_caption:'#ad',allowed_platforms:['youtube']};
  assert.equal((await call(env,'/api/profiles','POST',profile)).code,201);
  assert.equal((await call(env,'/api/plan','POST',{})).json.planned,2);
  assert.equal((await call(env,'/api/plan','POST',{})).json.planned,0);
@@ -33,5 +33,47 @@ test('worker: authentication and full approved render queue lifecycle',async()=>
  const jobs=(await call(env,'/api/jobs')).json.jobs;
  assert.equal(jobs.length,2);
  assert.equal(jobs.filter(x=>x.status==='ready_for_review').length,1);
+ sql.close();
+});
+
+test('social presets store only handles and never imply OAuth verification',async()=>{
+ const {env,sql}=setup();
+ let r=await call(env,'/api/social-presets','POST',{platform:'instagram',handle:'myclipaccount',confirmed_connected:false});
+ assert.equal(r.code,400);
+ r=await call(env,'/api/social-presets','POST',{platform:'instagram',handle:'myclipaccount',confirmed_connected:true});
+ assert.equal(r.code,201);
+ assert.equal(r.json.profile_url,'https://www.instagram.com/myclipaccount/');
+ assert.equal(r.json.verification,'user_attested_not_oauth');
+ const id=r.json.id;
+ assert.equal((await call(env,'/api/social-presets')).json.presets.length,1);
+ assert.equal((await call(env,'/api/social-presets','GET',undefined,false)).code,401);
+ const cid='5ad699cd-7aed-44f7-9b57-489fdd6e2628';
+ await call(env,'/api/import','POST',{campaigns:[{id:cid,accepting:true,budget_remaining:100}]});
+ const base={campaign_id:cid,verified_eligibility:true,assets_licensed:true,brief_reviewed:true,
+  rights_evidence:'owner approved original',allows_original_graphic:true,allowed_platforms:['youtube'],
+  social_preset_id:id,platform_allowed_by_campaign:true};
+ assert.equal((await call(env,'/api/profiles','POST',base)).code,400,'mismatched platform rejected');
+ assert.equal((await call(env,'/api/profiles','POST',{...base,allowed_platforms:['instagram']})).code,201);
+ assert.equal((await call(env,'/api/social-presets/'+id,'DELETE')).code,200);
+ assert.equal((await call(env,'/api/social-presets')).json.presets.length,0);
+ sql.close();
+});
+test('AI drafting requires supplied brief, never writes rights or eligibility',async()=>{
+ const {env,sql}=setup();
+ await call(env,'/api/import','POST',{campaigns:[{id:CID,title:'Sample',accepting:true,budget_remaining:100}]});
+ env.AI={async run(model,params){
+  assert.match(model,/llama-3.1-8b/);
+  assert.match(params.messages[1].content,/official claim/);
+  return {response:JSON.stringify({product_name:'Sample',approved_value_prop:'official claim',
+    approved_cta:'Visit official link',required_caption:'#ad'})};
+ }};
+ const bad=await call(env,'/api/assist','POST',{campaign_id:CID,brief_text:'short'});
+ assert.equal(bad.code,400);
+ const brief='Campaign guidelines: The official claim is available in the official brief. CTA: Visit official link. Required caption: #ad.';
+ const success=await call(env,'/api/assist','POST',{campaign_id:CID,brief_text:brief});
+ assert.equal(success.code,200);
+ assert.equal(success.json.fields.approved_value_prop,'official claim');
+ assert.equal(success.json.review_required,true);
+ assert.equal(success.json.fields.assets_licensed,undefined);
  sql.close();
 });
