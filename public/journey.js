@@ -130,6 +130,8 @@ function actionCard(parent,key,workflow){
   link(area,'Download videos from GitHub Actions artifacts ↗',artifacts);
   const pick=select(area,'Choose the ready video you reviewed',[
    ['', 'Select reviewed job'],...workflow.ready_jobs.map(j=>[j.id,j.id.slice(0,8)+' · '+j.created_at])]);
+  const artifactLink=link(area,'Open render run to download MP4 ↗',artifacts);
+  pick.addEventListener('change',()=>{const selected=workflow.ready_jobs.find(j=>j.id===pick.value);artifactLink.href=selected?.actions_run_url||artifacts;});
   const agree=confirmBox(area,'I actually watched this completed MP4 and checked it against the sponsor brief.');
   button(area,'Mark this render reviewed',async()=>{
    if(!pick.value||!agree.checked)throw Error('Select and review a real completed video first.');
