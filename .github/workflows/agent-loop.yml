@@ -1,5 +1,10 @@
 name: ClipFleet Pipeline (free-tier bounded)
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/agent-loop.yml'
+      - 'clipfleet/**'
   schedule:
     - cron: '15 */6 * * *'
   workflow_dispatch: {}
