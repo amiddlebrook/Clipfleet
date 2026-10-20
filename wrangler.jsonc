@@ -1,0 +1,26 @@
+{
+  "name": "clipfleet-ops",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-20",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "clipfleet-ops-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "5 */6 * * *"
+    ]
+  },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  }
+}

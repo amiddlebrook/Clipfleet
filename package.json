@@ -1,0 +1,10 @@
+{
+  "name": "clipfleet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/worker.test.mjs",
+    "check": "node --check worker/index.js && node --check public/app.js"
+  }
+}

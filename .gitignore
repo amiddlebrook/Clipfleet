@@ -1,0 +1,16 @@
+.env
+.env.*
+.dev.vars
+*.pem
+*.key
+*.credentials.json
+my-campaign.json
+node_modules/
+.wrangler/
+__pycache__/
+*.pyc
+artifacts/
+assets/*.mp4
+assets/*.mov
+assets/*.mkv
+.DS_Store

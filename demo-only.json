@@ -1,0 +1,17 @@
+{
+  "campaign_id": "00000000-0000-0000-0000-000000000000",
+  "campaign_url": "https://example.invalid/demonstration",
+  "product_name": "CLIPFLEET DEMO",
+  "approved_value_prop": "Sample graphics, generated locally with FFmpeg",
+  "approved_cta": "No campaign joined, no payment earned",
+  "required_caption": "Demo only - not for submission",
+  "verified_eligibility": true,
+  "assets_licensed": true,
+  "rights_evidence": "This fictional demo is self-authored and contains no third-party assets",
+  "brief_reviewed": true,
+  "allows_original_graphic": true,
+  "source_video": "",
+  "duration_seconds": 15,
+  "demo_only": true,
+  "allowed_platforms": []
+}

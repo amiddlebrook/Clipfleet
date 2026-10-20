@@ -1,0 +1,73 @@
+name: Deploy Cloudflare Worker
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - 'migrations/**'
+      - 'wrangler.jsonc'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: clipfleet-cloudflare-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLIPFLEET_ADMIN_TOKEN: ${{ secrets.CLIPFLEET_ADMIN_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check required secrets
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Install Wrangler
+        run: npm install --no-audit --no-fund --no-save wrangler@4.50.0
+      - name: Find or create D1 database, then write deploy-time UUID
+        shell: bash
+        run: |
+          set -euo pipefail
+          dbs="$(npx wrangler d1 list --json)"
+          id="$(echo "$dbs" | jq -r '[.[]|select(.name=="clipfleet-ops-db")|(.uuid//.id)]|first//empty')"
+          if [ -z "$id" ]; then npx wrangler d1 create clipfleet-ops-db; dbs="$(npx wrangler d1 list --json)"; id="$(echo "$dbs" | jq -r '[.[]|select(.name=="clipfleet-ops-db")|(.uuid//.id)]|first//empty')"; fi
+          [[ "$id" =~ ^[0-9a-fA-F-]{36}$ ]]
+          node -e 'let fs=require("fs"),c=JSON.parse(fs.readFileSync("wrangler.jsonc"));c.d1_databases[0].database_id=process.argv[1];fs.writeFileSync("wrangler.jsonc",JSON.stringify(c,null,2))' "$id"
+      - name: Migrate database
+        run: npx wrangler d1 migrations apply DB --remote
+      - name: Deploy
+        run: npx wrangler deploy
+      - name: Install protected administrator secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${CLIPFLEET_ADMIN_TOKEN:-}" ]; then
+            printf '%s' "$CLIPFLEET_ADMIN_TOKEN" | npx wrangler secret put ADMIN_TOKEN
+            echo "Administrator access enabled using CLIPFLEET_ADMIN_TOKEN."
+          else
+            # Public discovery and the landing dashboard still work with no account secrets.
+            # A strong unshared key prevents any public visitor from mutating records.
+            # When CLIPFLEET_ADMIN_TOKEN is added, redeploy to replace this key.
+            head -c 40 /dev/urandom | od -An -tx1 | tr -d ' \n' | npx wrangler secret put ADMIN_TOKEN
+            echo "WARNING: No CLIPFLEET_ADMIN_TOKEN configured: public dashboard and scheduled discovery only."
+            echo "To enable admin controls and automated import, set CLIPFLEET_ADMIN_TOKEN in GitHub Secrets and redeploy."
+          fi
+      - name: Check live Worker health
+        shell: bash
+        run: |
+          set -euo pipefail
+          subdomain=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r '.result.subdomain // empty')
+          if [ -z "$subdomain" ]; then echo 'Unable to resolve Worker subdomain'; exit 1; fi
+          endpoint="https://clipfleet-ops.$subdomain.workers.dev"
+          echo "Worker deployed to $endpoint"
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 "$endpoint/api/health" | jq -e '.ok == true and .app == "ClipFleet"'
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 "$endpoint/api/campaigns" | jq -e '.campaigns | type == "array"'
+          echo "Open dashboard: $endpoint" >> "$GITHUB_STEP_SUMMARY"
+

@@ -1,0 +1,19 @@
+{
+ "campaign_id": "5ad699cd-7aed-44f7-9b57-489fdd6e2628",
+ "campaign_url": "https://contentrewards.com/c/campaigns/5ad699cd-7aed-44f7-9b57-489fdd6e2628",
+ "campaign_title": "EXAMPLE: Brand-provided promo",
+ "product_name": "EXAMPLE BRAND",
+ "approved_value_prop": "Replace this with a fact supported by the official brief",
+ "approved_cta": "Replace this with the campaign's required call to action",
+ "required_caption": "#ad #ExampleBrand",
+ "verified_eligibility": false,
+ "assets_licensed": false,
+ "rights_evidence": "Campaign authorization or license reference goes here",
+ "brief_reviewed": false,
+ "allows_original_graphic": false,
+ "source_video": "assets/licensed-campaign.mp4",
+ "requires_preapproval": false,
+ "draft_approved": false,
+ "duration_seconds": 25,
+ "variant": 0
+}
