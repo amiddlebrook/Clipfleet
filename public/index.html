@@ -8,6 +8,7 @@
  <label>Payment model<select id="filter-model"><option value="all">All models</option><option value="per_post">Per approved post</option><option value="cpm">Per 1,000 views</option><option value="unknown">Unverified model</option></select></label>
  <label>Status<select id="filter-status"><option value="all">All status</option><option value="open">Accepting + budget</option><option value="fresh">Recently verified (12h)</option></select></label>
  <label>Minimum budget ($)<input id="filter-budget" type="number" min="0" step="10" value="0"></label>
+ <label>Minimum rate ($ per model unit)<input id="filter-rate" type="number" min="0" step="0.5" value="0"></label>
  <label>Sort<select id="filter-sort"><option value="priority">Priority score</option><option value="rate">Rate (within model)</option><option value="budget">Remaining budget</option><option value="recent">Most recently checked</option></select></label>
  <button id="filter-reset" type="button">Clear filters</button>
  <span id="filter-results" class="status" role="status" aria-live="polite"></span>
