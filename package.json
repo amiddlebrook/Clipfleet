@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/worker.test.mjs",
-    "check": "node --check worker/index.js && node --check public/app.js"
+    "check": "node --check worker/index.js && node --check worker/progress.js && node --check public/app.js && node --check public/journey.js"
   }
 }
