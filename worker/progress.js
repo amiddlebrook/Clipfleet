@@ -140,7 +140,9 @@ export async function workflowRoute(req,env,path,url){
   case 'review':{
    if(!done.rights||!done.profile)return fail('Authorize a compliant campaign profile before reviewing renders',409);
    const jobId=String(data.job_id||'');
-   if(!ID.test(jobId)||!previous.ready_jobs.some(j=>j.id===jobId))return fail('Select an unused, completed render from this campaign');
+   if(!ID.test(jobId))return fail('Select a valid completed render job');
+   if(previous.submissions.some(sub=>sub.job_id===jobId))return fail('This video was already submitted; choose a different completed render',409);
+   if(!previous.ready_jobs.some(j=>j.id===jobId))return fail('Select an unused, completed render from this campaign');
    state.reviewed_job_id=jobId;state.reviewed_at=ts;
    delete state.published_url;delete state.published_at;delete state.submitted_at;delete state.outcome;
    break;
