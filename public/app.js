@@ -30,7 +30,8 @@ function chooseCampaign(c){
  form.elements.namedItem('campaign_id').value=c.id;
  $('campaign-brief').value='';
  $('draft-status').textContent='Campaign selected: '+(c.title||c.id)+'. Paste the official brief to use AI drafting.';
- document.querySelector('.ai-panel').scrollIntoView({behavior:'smooth',block:'center'});
+ window.ClipFleetJourney?.select(c);
+ document.getElementById('journey')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function currentFilters(){
  return {
@@ -122,11 +123,11 @@ function drawPresets(){
 async function refreshPresets(){
  if(!token){presets=[];drawPresets();return;}
  const res=await api('GET','/api/social-presets');
- presets=res.presets||[];drawPresets();
+ presets=res.presets||[];drawPresets();window.ClipFleetJourney?.setPresets(presets);
 }
 async function load(){
  const [c,stat]=await Promise.all([api('GET','/api/campaigns'),api('GET','/api/stats')]);
- campaigns=c.campaigns||[];
+ campaigns=c.campaigns||[];window.ClipFleetJourney?.setCampaigns(campaigns);
  jobs=token?(await api('GET','/api/jobs')).jobs||[]:[];
  $('s-campaigns').textContent=stat.campaigns;
  $('s-active').textContent=stat.active;
@@ -134,6 +135,7 @@ async function load(){
  $('s-ready').textContent=stat.ready;
  drawCampaigns();drawJobs();
  if(token)await refreshPresets();
+ if(token)await window.ClipFleetJourney?.refresh();
  setMessage(token?'Admin connected':'Public campaign browsing · connect admin for actions');
 }
 async function safe(task,messageNode){
@@ -222,7 +224,9 @@ form.addEventListener('submit',event=>{
   $('approved-status').textContent='Saving reviewed campaign profile…';
   const response=await api('POST','/api/profiles',data);
   $('approved-status').textContent='Campaign '+response.campaign_id.slice(0,8)+' armed. Click Plan approved jobs.';
+  await window.ClipFleetJourney?.refresh();
  },$('approved-status'));
 });
+window.ClipFleetJourney?.initialize({api});
 load().catch(e=>setMessage('Public feed not available: '+e.message));
 })();
