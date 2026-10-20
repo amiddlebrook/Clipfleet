@@ -38,7 +38,7 @@ async function snapshot(env,id){
  const submissions=submissionsResult.results||[];
  const state=cleanState(tracking?.state);
  const profile=Boolean(trusted&&trusted.enabled);
- const ready=jobs.some(j=>j.status==='ready_for_review');
+ const ready=jobs.some(j=>j.status==='ready_for_review'&&(j.id===state.reviewed_job_id||!submissions.some(v=>v.job_id===j.id)));
  const reviewed=Boolean(state.reviewed_job_id&&jobs.some(j=>j.id===state.reviewed_job_id&&j.status==='ready_for_review'));
  const completed={
   joined:Boolean(state.joined_at),social:Boolean(state.social_at),brief:Boolean(state.brief_at),
