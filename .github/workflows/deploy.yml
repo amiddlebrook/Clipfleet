@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'worker/**'
+      - 'public/**'
       - 'migrations/**'
       - 'wrangler.jsonc'
       - '.github/workflows/deploy.yml'
