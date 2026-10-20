@@ -194,7 +194,7 @@ async function handler(request,env){
   return out({campaign_id:cid,armed:true,what_happens:'Plans up to 3 bounded render jobs only. No posting or payout submission.'},201);
  }
  if(path==='/api/jobs'&&request.method==='GET'){
-  const rows=await env.DB.prepare('SELECT id,campaign_id,status,created_at,claimed_at,completed_at,error,output_sha256 FROM jobs ORDER BY created_at DESC LIMIT 100').all();return out({jobs:rows.results});
+  const rows=await env.DB.prepare('SELECT id,campaign_id,status,created_at,claimed_at,completed_at,error,output_sha256,actions_run_url FROM jobs ORDER BY created_at DESC LIMIT 100').all();return out({jobs:rows.results});
  }
  if(path==='/api/jobs'&&request.method==='POST'){
   const data=await body(request);
@@ -220,7 +220,9 @@ async function handler(request,env){
  if(match&&request.method==='POST'){
   const data=await body(request);
   if(!['failed','ready_for_review'].includes(data.status))return err('Invalid completion status');
-  const result=await env.DB.prepare(`UPDATE jobs SET status=?,completed_at=?,output_sha256=?,error=? WHERE id=? AND status='rendering' RETURNING id`).bind(data.status,new Date().toISOString(),String(data.output_sha256||'').slice(0,64),String(data.error||'').slice(0,200),match[1]).first();
+  const runUrl=String(data.actions_run_url||'');
+  if(runUrl&&!/^https:\/\/github\.com\/amiddlebrook\/Clipfleet\/actions\/runs\/[1-9][0-9]{3,20}$/.test(runUrl))return err('Invalid GitHub Actions run link');
+  const result=await env.DB.prepare(`UPDATE jobs SET status=?,completed_at=?,output_sha256=?,error=?,actions_run_url=? WHERE id=? AND status='rendering' RETURNING id`).bind(data.status,new Date().toISOString(),String(data.output_sha256||'').slice(0,64),String(data.error||'').slice(0,200),runUrl||null,match[1]).first();
   if(!result)return err('Job not found or not rendering',409);
   return out({id:match[1],status:data.status});
  }
