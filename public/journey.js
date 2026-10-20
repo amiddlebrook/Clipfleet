@@ -170,6 +170,30 @@ function actionCard(parent,key,workflow){
   });
  }
 }
+function drawSubmissions(workflow){
+ const holder=$('journey-submissions');holder.replaceChildren();
+ const list=workflow.submissions||[];
+ const head=text('div',undefined,holder,'journey-submissions-head');
+ text('h3','Submission ledger ('+list.length+')',head);
+ if(workflow.completed.submitted)button(head,'Start tracking another clip',async()=>send('next_clip'));
+ text('p','This ledger preserves earlier posted URLs and your manually reported statuses. It does not query Content Rewards or confirm payouts.',holder,'journey-muted');
+ if(!list.length){text('p','No submissions recorded yet.',holder,'journey-muted');return;}
+ for(const item of list){
+  const row=text('div',undefined,holder,'journey-submission');
+  const info=text('div',undefined,row,'journey-submission-info');
+  text('strong',item.platform.toUpperCase()+' · '+item.outcome.toUpperCase(),info);
+  link(info,'Open submitted public post ↗',item.published_url);
+  text('small','Recorded submitted: '+item.submitted_at+' · job '+item.job_id.slice(0,8),info);
+  const update=select(row,'Update recorded sponsor result',[
+   ['','Choose verified-by-you result'],['accepted','Accepted'],['rejected','Rejected'],['paid','Actually paid']
+  ]);
+  const attested=confirmBox(row,'I checked the real outcome in Content Rewards.');
+  button(row,'Update',async()=>{
+   if(!attested.checked||!update.value)throw Error('Check the real status before recording.');
+   await send('submission_outcome',{submission_id:item.id,outcome:update.value});
+  });
+ }
+}
 function draw(workflow){
  last=workflow;$('journey-empty').hidden=true;$('journey-content').hidden=false;
  $('journey-title').textContent=workflow.campaign.title||workflow.campaign.id;
@@ -181,6 +205,7 @@ function draw(workflow){
   (workflow.submission_window.expired?'Recorded submission window expired.':'Submit within '+workflow.submission_window.minutes_remaining+' minutes of your reported publishing time.'):'Posting and sponsor submission require your explicit action. No auto-revenue claims.';
  const holder=$('journey-steps');holder.replaceChildren();
  for(const [key] of stages)actionCard(holder,key,workflow);
+ drawSubmissions(workflow);
 }
 async function refresh(){
  if(!api||!current)return;
