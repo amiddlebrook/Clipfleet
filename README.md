@@ -12,6 +12,23 @@ Cloudflare Workers + D1 · GitHub Actions · FFmpeg · Python 3.11+ · no paid A
 
 > **Important truth:** This project is not capable of unattended **end-to-end paid submissions** to Content Rewards today. I could verify the platform's official workflow (connect/verify social accounts, join campaigns, post, submit within **30 minutes**), but could not verify a public, officially supported API for completing those submissions. The software therefore **never claims a clip was submitted or earned money**. It does automate campaign research, scoring, rights-gated creative production and review packaging at scale. If the sponsor authorizes an HTTPS media link, the runner can fetch footage from explicitly allowlisted domains; it cannot infer usage rights from a URL. Optional official YouTube uploading exists for deliberate on-demand use. Do **not** automate posting unless you can submit the post immediately afterward through a legitimate authorized mechanism. No bot-generated views, fake engagement, CAPTCHA bypass, cookie scraping or platform impersonation.
 
+
+## Dashboard upgrades: filters, AI briefs and creator presets
+
+Open **https://clipfleet-ops.averymiddlebrook2014.workers.dev** and connect your administrator token.
+
+**Campaign filters:** Search by brand/UUID, payment model (per-approved-post vs CPM), accepting status, whether the public detail was checked within 12 hours, and minimum remaining budget. Sort by priority score, latest verification, highest remaining budget, or rate (rates are grouped by payment model because CPM and per-post payouts are not directly comparable). These filters work in the browser on indexed campaigns; they do not imply real-time eligibility.
+
+**AI draft from official brief:** Select a campaign and paste at least 80 characters of its official campaign brief into the **AI-assisted campaign draft** panel. Press **AI draft from official brief**. Cloudflare Workers AI (model `@cf/meta/llama-3.1-8b-instruct-fp8`) returns *editable draft suggestions* for brand/product name, value proposition, call to action and caption. The AI request is authenticated, the brief is not added to the campaign database, and the Worker caps drafting at **8 requests per UTC day** to prioritize free-tier usage. The free Workers plan has a shared daily Workers AI allowance, so generation may fail if that allowance is exhausted. You can always enter text manually. The button **Prefill title only** uses deterministic public listing metadata, not AI.
+
+**Social presets:** Use **Social account presets** to save a platform and handle (YouTube, TikTok, Instagram, Facebook or X), provided you have *already connected it in Content Rewards* and checked that it shows Connected. Saved entries are private D1 records available through administrator endpoints; no passwords or OAuth tokens are stored. **Use preset** inserts the platform into the campaign form, but you must separately confirm that the campaign accepts that platform. Presets are not a way to connect Content Rewards OAuth or automate social uploading.
+
+**Review gate:** The AI does not fill rights evidence, content license, account-connection truth, media permission, or brand pre-approval. Those are confirmed manually. Check eligibility and the complete sponsor brief before authorizing jobs. If brand draft pre-approval is required, mark **Brand requires draft pre-approval**, and only mark **Brand approved my actual draft** once it really has.
+
+For account verification, [follow the official Content Rewards guide](https://help.contentrewards.com/en/articles/16746780-connect-your-social-accounts). Linking an account in Whop itself is not sufficient.
+
+**No change to publishing:** ClipFleet's scheduled pipeline still prepares video artifacts for review, not unattended Content Rewards submissions, and nothing here guarantees earnings.
+
 ## What runs on a schedule
 
 | Component | Action | Automation |
