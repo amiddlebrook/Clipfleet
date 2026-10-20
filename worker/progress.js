@@ -34,6 +34,8 @@ async function snapshot(env,id){
  const trusted=await env.DB.prepare('SELECT campaign_id,enabled,reviewed_at FROM trusted_campaigns WHERE campaign_id=?').bind(id).first();
  const list=await env.DB.prepare('SELECT id,status,created_at,completed_at FROM jobs WHERE campaign_id=? ORDER BY created_at DESC LIMIT 35').bind(id).all();
  const jobs=list.results||[];
+ const submissionsResult=await env.DB.prepare('SELECT id,job_id,platform,published_url,published_at,submitted_at,submission_reference,outcome,updated_at FROM campaign_submissions WHERE campaign_id=? ORDER BY submitted_at DESC LIMIT 50').bind(id).all();
+ const submissions=submissionsResult.results||[];
  const state=cleanState(tracking?.state);
  const profile=Boolean(trusted&&trusted.enabled);
  const ready=jobs.some(j=>j.status==='ready_for_review');
@@ -48,7 +50,7 @@ async function snapshot(env,id){
  const first=STAGES.find(k=>!completed[k])||'complete';
  return {campaign,state,completed,steps:STAGES,completed_count:STAGES.filter(k=>completed[k]).length,
   next_step:first,revision:Number(tracking?.revision||0),updated_at:tracking?.updated_at||null,
-  profile_authorized:profile,jobs,ready_jobs:jobs.filter(j=>j.status==='ready_for_review'),
+  profile_authorized:profile,jobs,submissions,ready_jobs:jobs.filter(j=>j.status==='ready_for_review'&&!submissions.some(v=>v.job_id===j.id)),
   submission_window:state.published_at?{
    recorded_published_at:state.published_at,deadline:new Date(Date.parse(state.published_at)+30*60000).toISOString(),
    minutes_remaining:Math.max(0,Math.ceil((Date.parse(state.published_at)+30*60000-Date.now())/60000)),
@@ -138,7 +140,7 @@ export async function workflowRoute(req,env,path,url){
   case 'review':{
    if(!done.rights||!done.profile)return fail('Authorize a compliant campaign profile before reviewing renders',409);
    const jobId=String(data.job_id||'');
-   if(!ID.test(jobId)||!previous.jobs.some(j=>j.id===jobId&&j.status==='ready_for_review'))return fail('Select a completed render from this campaign');
+   if(!ID.test(jobId)||!previous.ready_jobs.some(j=>j.id===jobId))return fail('Select an unused, completed render from this campaign');
    state.reviewed_job_id=jobId;state.reviewed_at=ts;
    delete state.published_url;delete state.published_at;delete state.submitted_at;delete state.outcome;
    break;
@@ -154,14 +156,39 @@ export async function workflowRoute(req,env,path,url){
    delete state.submitted_at;delete state.outcome;
    break;
   }
-  case 'submitted':
+  case 'submitted':{
    if(!done.published)return fail('Record the published post URL before submission',409);
-   state.submitted_at=ts;state.submission_reference=String(data.submission_reference||'').trim().slice(0,300);
+   const ref=String(data.submission_reference||'').trim().slice(0,300);
+   const subId=crypto.randomUUID();
+   try{
+    const inserted=await env.DB.prepare('INSERT OR IGNORE INTO campaign_submissions(id,campaign_id,job_id,platform,published_url,published_at,submitted_at,submission_reference,outcome,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?) RETURNING id')
+     .bind(subId,id,state.reviewed_job_id,state.platform,state.published_url,state.published_at,ts,ref,'pending',ts).first();
+    if(!inserted)return fail('This job or post URL was previously submitted; use the recorded submission instead',409);
+   }catch(e){if(e instanceof Response)return e;throw e;}
+   state.submitted_at=ts;state.submission_reference=ref;state.submission_id=subId;
    delete state.outcome;break;
+  }
   case 'outcome':{
    if(!done.submitted)return fail('First confirm actual submission to Content Rewards',409);
    if(!['accepted','rejected','paid'].includes(data.outcome))return fail('Select accepted, rejected or paid');
+   const row=await env.DB.prepare('UPDATE campaign_submissions SET outcome=?,updated_at=? WHERE id=? AND campaign_id=? RETURNING id')
+     .bind(data.outcome,ts,state.submission_id,id).first();
+   if(!row)return fail('Submission record missing',409);
    state.outcome=data.outcome;state.outcome_at=ts;
+   break;
+  }
+  case 'next_clip':{
+   if(!done.submitted)return fail('Record the completed submission before starting the next clip',409);
+   for(const key of ['reviewed_job_id','reviewed_at','published_url','published_at','submitted_at','submission_reference','submission_id','outcome','outcome_at'])delete state[key];
+   break;
+  }
+  case 'submission_outcome':{
+   const sid=String(data.submission_id||'');
+   if(!ID.test(sid)||!['accepted','rejected','paid'].includes(data.outcome))return fail('Choose an actual submission and verified-by-you outcome');
+   const row=await env.DB.prepare('UPDATE campaign_submissions SET outcome=?,updated_at=? WHERE id=? AND campaign_id=? RETURNING id')
+    .bind(data.outcome,ts,sid,id).first();
+   if(!row)return fail('Submission not found',404);
+   if(state.submission_id===sid){state.outcome=data.outcome;state.outcome_at=ts;}
    break;
   }
   default:return fail('Unsupported workflow action');
