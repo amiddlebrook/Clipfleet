@@ -155,14 +155,14 @@ def seconds(path: Path) -> float:
 
 
 def make_video(job: dict[str, Any], output: Path, variant: int = 0) -> dict[str, Any]:
-    if not ffmpeg_exists():
-        raise RuntimeError('ffmpeg and ffprobe are required for rendering')
     if not job.get('verified_eligibility') or not job.get('assets_licensed'):
         raise ValueError('A real campaign must have verified eligibility and confirmed content rights before rendering')
     if job.get('requires_preapproval') and not job.get('draft_approved'):
         raise ValueError('Campaign requires draft pre-approval before publishing')
     if not job.get('allows_original_graphic') and not job.get('source_video'):
         raise ValueError('Campaign does not authorize text-only original graphics; licensed footage is required')
+    if not ffmpeg_exists():
+        raise RuntimeError('ffmpeg and ffprobe are required for rendering')
     duration = max(15, min(45, int(job.get('duration_seconds', 25))))
     output.parent.mkdir(parents=True, exist_ok=True)
     lines = make_script(job, variant)
