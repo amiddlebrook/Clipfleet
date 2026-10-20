@@ -105,7 +105,11 @@ def cmd_batch(args):
                 config=obtain_licensed_asset(config,Path(folder))
                 result=make_video(config,dst,config.get('variant',0))
             write_json(dst.with_suffix('.json'),result)
-            worker_call('POST',f'/api/jobs/{job["id"]}/complete',{'status':'ready_for_review','output_sha256':result['sha256']})
+            repo_name=os.getenv('GITHUB_REPOSITORY','')
+            run_id=os.getenv('GITHUB_RUN_ID','')
+            actions_run_url=(f'https://github.com/{repo_name}/actions/runs/{run_id}'
+                              if repo_name=='amiddlebrook/Clipfleet' and run_id.isdecimal() else '')
+            worker_call('POST',f'/api/jobs/{job["id"]}/complete',{'status':'ready_for_review','output_sha256':result['sha256'],'actions_run_url':actions_run_url})
             print(f'Rendered {dst}')
         except Exception as exc:
             worker_call('POST',f'/api/jobs/{job["id"]}/complete',{'status':'failed','error':str(exc)[:200]})
