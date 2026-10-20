@@ -1,3 +1,4 @@
+import {workflowRoute} from './progress.js';
 /** ClipFleet Cloudflare Worker API. Free-tier D1, no paid external services. */
 const JSON_HEADERS = {'content-type':'application/json;charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"default-src 'none'; frame-ancestors 'none'"};
 const uuidPattern=/\/c\/campaigns\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/ig;
@@ -151,6 +152,7 @@ async function handler(request,env){
    return err('AI drafting unavailable or capacity exhausted; try again later or enter fields manually',503);
   }
  }
+ const journey=await workflowRoute(request,env,path,new URL(request.url));if(journey)return journey;
  if(path==='/api/discover'&&request.method==='POST')return out(await feed(env));
  if(path==='/api/import'&&request.method==='POST'){
   const data=await body(request);
