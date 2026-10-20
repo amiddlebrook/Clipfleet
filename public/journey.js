@@ -229,6 +229,10 @@ function setCampaigns(items){
 function selectCampaign(c){
  current=c?.id||null;last=null;
  $('journey-picker').value=current||'';
+ if(current){
+  const field=document.getElementById('campaign_id');if(field)field.value=current;
+  const status=document.getElementById('draft-status');if(status)status.textContent='Selected '+(c.title||current)+'. Paste the official brief before asking AI to draft fields.';
+ }
  $('journey-empty').hidden=Boolean(current);$('journey-content').hidden=true;
  messages('');
  if(!current)return;
