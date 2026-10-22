@@ -131,6 +131,7 @@ async function load(){
  campaigns=c.campaigns||[];window.ClipFleetJourney?.setCampaigns(campaigns);window.ClipFleetDistribution?.setCampaigns(campaigns);
  jobs=token?(await api('GET','/api/jobs')).jobs||[]:[];
  window.ClipFleetGrok?.setAccess(Boolean(token));window.ClipFleetGrok?.setJobs(jobs);window.ClipFleetDistribution?.setAuthorized(Boolean(token));
+ window.ClipFleetConnections?.setAuthorized(Boolean(token));
  $('s-campaigns').textContent=stat.campaigns;
  $('s-active').textContent=stat.active;
  $('s-queued').textContent=stat.queued;
@@ -140,6 +141,7 @@ async function load(){
  if(token)await window.ClipFleetJourney?.refresh();
  if(token)await window.ClipFleetGrok?.refresh();
  if(token)await window.ClipFleetDistribution?.refresh();
+ if(token)await window.ClipFleetConnections?.refresh();
  setMessage(token?'Admin connected':'Public campaign browsing · connect admin for actions');
 }
 async function safe(task,messageNode){
@@ -232,6 +234,7 @@ form.addEventListener('submit',event=>{
  },$('approved-status'));
 });
 window.ClipFleetJourney?.initialize({api});
+window.ClipFleetConnections?.initialize({api});
 window.ClipFleetDistribution?.initialize({api});
 window.ClipFleetGrok?.initialize({api});
 load().catch(e=>setMessage('Public feed not available: '+e.message));
