@@ -31,6 +31,7 @@ function chooseCampaign(c){
  $('campaign-brief').value='';
  $('draft-status').textContent='Campaign selected: '+(c.title||c.id)+'. Paste the official brief to use AI drafting.';
  window.ClipFleetJourney?.select(c);
+ window.ClipFleetDistribution?.select(c);
  document.getElementById('journey')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function currentFilters(){
@@ -123,13 +124,13 @@ function drawPresets(){
 async function refreshPresets(){
  if(!token){presets=[];drawPresets();return;}
  const res=await api('GET','/api/social-presets');
- presets=res.presets||[];drawPresets();window.ClipFleetJourney?.setPresets(presets);
+ presets=res.presets||[];drawPresets();window.ClipFleetJourney?.setPresets(presets);window.ClipFleetDistribution?.setPresets(presets);
 }
 async function load(){
  const [c,stat]=await Promise.all([api('GET','/api/campaigns'),api('GET','/api/stats')]);
- campaigns=c.campaigns||[];window.ClipFleetJourney?.setCampaigns(campaigns);
+ campaigns=c.campaigns||[];window.ClipFleetJourney?.setCampaigns(campaigns);window.ClipFleetDistribution?.setCampaigns(campaigns);
  jobs=token?(await api('GET','/api/jobs')).jobs||[]:[];
- window.ClipFleetGrok?.setAccess(Boolean(token));window.ClipFleetGrok?.setJobs(jobs);
+ window.ClipFleetGrok?.setAccess(Boolean(token));window.ClipFleetGrok?.setJobs(jobs);window.ClipFleetDistribution?.setAuthorized(Boolean(token));
  $('s-campaigns').textContent=stat.campaigns;
  $('s-active').textContent=stat.active;
  $('s-queued').textContent=stat.queued;
@@ -138,6 +139,7 @@ async function load(){
  if(token)await refreshPresets();
  if(token)await window.ClipFleetJourney?.refresh();
  if(token)await window.ClipFleetGrok?.refresh();
+ if(token)await window.ClipFleetDistribution?.refresh();
  setMessage(token?'Admin connected':'Public campaign browsing · connect admin for actions');
 }
 async function safe(task,messageNode){
@@ -230,6 +232,7 @@ form.addEventListener('submit',event=>{
  },$('approved-status'));
 });
 window.ClipFleetJourney?.initialize({api});
+window.ClipFleetDistribution?.initialize({api});
 window.ClipFleetGrok?.initialize({api});
 load().catch(e=>setMessage('Public feed not available: '+e.message));
 })();
