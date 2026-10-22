@@ -274,6 +274,12 @@ test('four separate publishing lanes render distinct videos, route to exact acco
  assert.equal(snap.json.lanes.find(x=>x.platform==='youtube').job_id,null);
  assert.equal(snap.json.submissions.length,1,'old submission is retained');
  assert.equal(snap.json.submissions[0].outcome,'paid');
+ assert.equal((await report('youtube','history_outcome',
+  {submission_id:snap.json.submissions[0].id,outcome:'paid'})).code,200,
+  'previous platform submission remains independently editable after resetting lane');
+ assert.equal((await report('tiktok','history_outcome',
+  {submission_id:snap.json.submissions[0].id,outcome:'paid'})).code,404,
+  'one platform cannot alter another platform submission');
  assert.equal((await call(env,'/api/distribution?campaign_id='+CID,'GET',undefined,false)).code,401);
  sql.close();
 });
