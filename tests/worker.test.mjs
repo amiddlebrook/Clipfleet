@@ -5,9 +5,9 @@ import {readFileSync} from 'node:fs';
 import worker from '../worker/index.js';
 const CID='5ad699cd-7aed-44f7-9b57-489fdd6e2628';
 function setup(){
- const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));
+ const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0006_grokbot_handoff.sql',import.meta.url),'utf-8'));
  const DB={prepare:(q)=>({bind(...args){this.args=args;return this},async first(){return sql.prepare(q).get(...(this.args||[]))||null},async run(){return {meta:{changes:sql.prepare(q).run(...(this.args||[])).changes}}},async all(){return {results:sql.prepare(q).all(...(this.args||[]))}}})};
- return {sql,env:{DB,ADMIN_TOKEN:'abcdef0123456789abcdef0123456789'}};
+ return {sql,env:{DB,ADMIN_TOKEN:'abcdef0123456789abcdef0123456789',GROKBOT_CALLBACK_TOKEN:'botcallbackabcdef0123456789abcdef0123456789'}};
 }
 function req(path,method='GET',data,token=true){return new Request('https://clipfleet.workers.dev'+path,{method,headers:{...(token?{Authorization:'Bearer abcdef0123456789abcdef0123456789'}:{}),...(data?{'content-type':'application/json'}:{})},body:data?JSON.stringify(data):undefined});}
 async function call(env,path,method='GET',data,token=true){const res=await worker.fetch(req(path,method,data,token),env);return {code:res.status,json:await res.json()};}
@@ -142,4 +142,57 @@ test('guided dashboard includes navigation, safety links and no automatic submis
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(js,/submitGuide/);assert.match(js,/published_at/);
  assert.match(js,/I actually submitted the post URL/);
+});
+
+test('Grok Bot queue only includes approved rendered clips and webhook status is not completion',async()=>{
+ const {env,sql}=setup();
+ await call(env,'/api/import','POST',{campaigns:[{id:CID,title:'Campaign',model:'per_post',rate:15,accepting:true,budget_remaining:400}]});
+ let result=await call(env,'/api/grokbot/queue','POST',{job_id:crypto.randomUUID()});
+ assert.equal(result.code,409,'unknown jobs cannot be handed off');
+ const profile={campaign_id:CID,verified_eligibility:true,assets_licensed:true,brief_reviewed:true,
+  rights_evidence:'campaign approval rights',allows_original_graphic:true,allowed_platforms:['youtube'],
+  max_variants:1,product_name:'Test',approved_value_prop:'Approved',approved_cta:'Visit',required_caption:'#ad'};
+ assert.equal((await call(env,'/api/profiles','POST',profile)).code,201);
+ assert.equal((await call(env,'/api/plan','POST',{})).json.planned,1);
+ const job=(await call(env,'/api/jobs/claim','POST',{worker:'github-actions'})).json.job;
+ result=await call(env,'/api/grokbot/queue','POST',{job_id:job.id});
+ assert.equal(result.code,409,'rendering jobs cannot be sent');
+ const runLink='https://github.com/amiddlebrook/Clipfleet/actions/runs/39512428322';
+ result=await call(env,`/api/jobs/${job.id}/complete`,'POST',
+    {status:'ready_for_review',output_sha256:'a'.repeat(64),actions_run_url:runLink});
+ assert.equal(result.code,200);
+ result=await call(env,'/api/grokbot/tasks');
+ assert.equal(result.json.tasks.length,1,'ready job should be auto-queued');
+ assert.equal(result.json.tasks[0].status,'queued');
+ assert.equal((await call(env,'/api/grokbot/queue','POST',{job_id:job.id})).json.queued,false,'no duplicate task');
+ const claimed=(await call(env,'/api/grokbot/claim','POST',{max:2})).json.tasks;
+ assert.equal(claimed.length,1);
+ assert.equal(claimed[0].job_id,job.id);
+ const accepted=await call(env,'/api/grokbot/dispatch-result','POST',{task_id:claimed[0].id,http_status:200});
+ assert.equal(accepted.code,200);
+ assert.equal(accepted.json.accepted,true);
+ assert.equal(accepted.json.bot_finished,false);
+ const report=(data,auth='botcallbackabcdef0123456789abcdef0123456789')=>
+ worker.fetch(new Request('https://clipfleet.workers.dev/api/grokbot/report',{method:'POST',
+  headers:{'content-type':'application/json',Authorization:'Bearer '+auth},body:JSON.stringify(data)}),env);
+ assert.equal((await report({task_id:claimed[0].id,action:'prepared'},'incorrect-token')).status,401);
+ assert.equal((await report({task_id:claimed[0].id,action:'paid'})).status,400,'cannot claim payout');
+ assert.equal((await report({task_id:claimed[0].id,action:'needs_approval',note:'Review prepared draft'})).status,200);
+ assert.equal((await report({task_id:claimed[0].id,action:'needs_approval'})).status,409,'only one completion report allowed');
+ const tasks=(await call(env,'/api/grokbot/tasks')).json.tasks;
+ assert.equal(tasks[0].status,'reported');
+ assert.equal(tasks[0].reported_action,'needs_approval');
+ const workflow=(await call(env,'/api/workflow?campaign_id='+CID)).json.workflow;
+ assert.equal(workflow.completed.published,false,'bot reports never automatically mark social publication');
+ assert.equal(workflow.completed.submitted,false,'bot reports never automatically mark Content Rewards submissions');
+ sql.close();
+});
+
+test('Grok Bot links and scripts are included in the dashboard',()=>{
+ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf-8');
+ const js=readFileSync(new URL('../public/grokbot.js',import.meta.url),'utf-8');
+ assert.match(html,/id="grokbot"/);
+ assert.match(html,/src="\/grokbot.js"/);
+ assert.match(js,/callback_configured/);
+ assert.match(js,/Accepted = webhook run started/);
 });
