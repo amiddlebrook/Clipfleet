@@ -96,6 +96,12 @@ function card(platform){
  const status=node('p',undefined,wrapper,'distribution-muted');
  status.textContent='Job: '+(lane.job_id?lane.job_id.slice(0,8):'not planned')+' · Render: '+(lane.render_status||'not started');
  if(lane.render_error)node('p',lane.render_error,wrapper,'distribution-error');
+ if(lane.status==='queued'&&lane.render_status==='failed'){
+  action(wrapper,'Reset failed render for this platform',async()=>{
+   if(!confirm('The previous FFmpeg job failed. Reset only this platform lane and requeue a separate render?'))return;
+   await report(platform.id,'retry_render');
+  });
+ }
  if(lane.job_id&&lane.render_status==='ready_for_review'&&lane.status==='queued'){
   const attest=check(wrapper,'I watched the actual platform-specific MP4, verified claims, disclosure, required caption, and sponsor compliance.');
   action(wrapper,'Mark '+platform.label+' video reviewed',async()=>{
