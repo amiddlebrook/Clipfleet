@@ -82,9 +82,11 @@ export async function grokBotAdmin(req,env,path){
       AND status='queued'
     RETURNING id,job_id,campaign_id,attempts`).bind(new Date().toISOString()).first();
    if(!t)break;
-   const details=await env.DB.prepare(`SELECT j.actions_run_url,c.title,c.url campaign_url,j.output_sha256
-     FROM jobs j JOIN campaigns c ON c.id=j.campaign_id WHERE j.id=?`).bind(t.job_id).first();
-   claimed.push({...t,title:details?.title||'',campaign_url:details?.campaign_url||'',actions_run_url:details?.actions_run_url||'',output_sha256:details?.output_sha256||''});
+   const details=await env.DB.prepare(`SELECT j.actions_run_url,c.title,c.url campaign_url,j.output_sha256,d.platform,s.handle
+     FROM jobs j JOIN campaigns c ON c.id=j.campaign_id
+     LEFT JOIN distribution_targets d ON d.job_id=j.id
+     LEFT JOIN social_presets s ON s.id=d.preset_id WHERE j.id=?`).bind(t.job_id).first();
+   claimed.push({...t,title:details?.title||'',campaign_url:details?.campaign_url||'',actions_run_url:details?.actions_run_url||'',output_sha256:details?.output_sha256||'',platform:details?.platform||'',social_handle:details?.handle||''});
   }
   return ok({tasks:claimed,meaning:'Webhook dispatch acceptance is not Bot task completion.'});
  }
