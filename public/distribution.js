@@ -159,6 +159,12 @@ function render(){
   node('strong',sub.platform.toUpperCase()+' · '+(sub.outcome==='pending'?'Pending (self-reported)':sub.outcome),row);
   link(row,'Public post ↗',sub.published_url);
   node('span','Submitted (reported): '+sub.submitted_at,row);
+  const decision=choice(row,'Earlier sponsor decision',[['','Update status'],['accepted','Accepted'],['rejected','Rejected'],['paid','Payment received']]);
+  const attested=check(row,'I verified this actual earlier submission result.');
+  action(row,'Save result',async()=>{
+   if(!attested.checked||!decision.value)throw Error('Check the real sponsor decision first.');
+   await report(sub.platform,'history_outcome',{submission_id:sub.id,outcome:decision.value});
+  });
  }
  const rows=data.lanes||[];
  if(rows.length)setMessage(rows.length+' platform lane(s) configured. Distinct renders and submission status are tracked separately.');
