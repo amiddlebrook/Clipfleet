@@ -283,5 +283,5 @@ test('four-platform dashboard loads safe form widgets and input checks',()=>{
  assert.match(html,/id="distribution"/);
  assert.match(html,/src="\/distribution.js"/);
  for(const platform of ['youtube','tiktok','instagram','x'])assert.match(script,new RegExp("id:'"+platform+"'"));
- assert.match(script,/submit within 30/i);
+ assert.match(script,/Submit within ~/);
 });
