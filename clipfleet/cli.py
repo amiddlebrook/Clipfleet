@@ -60,7 +60,7 @@ def cmd_import_d1(args):
 
 def cmd_render(args):
     job=load_json(args.job)
-    if args.variant < 0 or args.variant > 2: raise ValueError('Variant must be 0, 1, or 2')
+    if args.variant < 0 or args.variant > 3: raise ValueError('Variant must be 0, 1, 2, or 3')
     output=Path(args.output)
     with tempfile.TemporaryDirectory(prefix='clipfleet-asset-') as folder:
         job=obtain_licensed_asset(job,Path(folder))
