@@ -229,6 +229,7 @@ function setCampaigns(items){
 function selectCampaign(c){
  current=c?.id||null;last=null;
  $('journey-picker').value=current||'';
+ window.ClipFleetDistribution?.select(c);
  if(current){
   const field=document.getElementById('campaign_id');if(field)field.value=current;
   const status=document.getElementById('draft-status');if(status)status.textContent='Selected '+(c.title||current)+'. Paste the official brief before asking AI to draft fields.';
