@@ -29,6 +29,16 @@ For account verification, [follow the official Content Rewards guide](https://he
 
 **No change to publishing:** ClipFleet's scheduled pipeline still prepares video artifacts for review, not unattended Content Rewards submissions, and nothing here guarantees earnings.
 
+## Grok Bot browser-agent integration
+
+**Grok Bot routine handoffs are now implemented, but you must connect your own Grok Bot routine.** See [Grok Bot integration & setup](docs/GROKBOT-INTEGRATION.md).
+
+Approved renders with an exact GitHub Actions artifact URL are entered into a unique Grok Bot task queue in Cloudflare D1. A separate GitHub Actions dispatcher triggers your Grok Bot's **documented webhook routine** with `Authorization: Bearer <key>`, at most two tasks per run, on a 30-minute schedule or manually. The webhook URL/key are GitHub Secrets, never frontend variables.
+
+The dashboard **Browser agent task queue** distinguishes queued/dispatching/**webhook accepted**/bot reported/blocked/failed; a webhook HTTP 200 is **not completion**. Optional separately authenticated callbacks let Grok Bot report a limited non-sensitive result without seeing the ClipFleet administrator credential.
+
+**Before activation:** create a Grok Bot webhook routine yourself, then add `GROKBOT_WEBHOOK_URL`, `GROKBOT_WEBHOOK_KEY`, and optionally `GROKBOT_CALLBACK_TOKEN` to GitHub Actions Secrets. ClipFleet will not sign into external sites, circumvent rights rules or claim actual posting/submission/payment without verification or consent. Grok Bot requires an eligible external subscription.
+
 ## Guided campaign autopilot (new)
 
 Start at **[ClipFleet's deployed dashboard](https://clipfleet-ops.averymiddlebrook2014.workers.dev)**, connect your administrator token, and select a campaign in **Campaign Autopilot**.
