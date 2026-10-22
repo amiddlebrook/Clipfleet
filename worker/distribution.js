@@ -171,6 +171,17 @@ export async function distributionRoute(req,env,path,url){
    if(!row)return error('Recorded submission missing',409);
    await env.DB.prepare('UPDATE distribution_targets SET outcome=?,status=?,updated_at=? WHERE campaign_id=? AND platform=?')
     .bind(data.outcome,data.outcome,now,cid,platform).run();
+  }else if(action==='history_outcome'){
+   const sid=String(data.submission_id||'');
+   if(!ID.test(sid)||!['accepted','rejected','paid'].includes(data.outcome))
+    return error('Choose a real recorded submission and observed sponsor decision');
+   const row=await env.DB.prepare(`UPDATE campaign_submissions SET outcome=?,updated_at=?
+    WHERE id=? AND campaign_id=? AND platform=? RETURNING job_id`)
+    .bind(data.outcome,now,sid,cid,platform).first();
+   if(!row)return error('Submission not found under this platform',404);
+   if(row.job_id===lane.job_id&&['submitted','accepted','rejected','paid'].includes(lane.status))
+    await env.DB.prepare('UPDATE distribution_targets SET outcome=?,status=?,updated_at=? WHERE campaign_id=? AND platform=?')
+     .bind(data.outcome,data.outcome,now,cid,platform).run();
   }else if(action==='retry_render'){
    if(lane.status!=='queued'||!lane.job_id)return error('Only failed, unpublished render jobs can be retried',409);
    const job=await env.DB.prepare('SELECT status FROM jobs WHERE id=? AND campaign_id=?').bind(lane.job_id,cid).first();
