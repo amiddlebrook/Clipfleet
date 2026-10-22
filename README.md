@@ -29,6 +29,16 @@ For account verification, [follow the official Content Rewards guide](https://he
 
 **No change to publishing:** ClipFleet's scheduled pipeline still prepares video artifacts for review, not unattended Content Rewards submissions, and nothing here guarantees earnings.
 
+## Four-platform distribution (YouTube + TikTok + Instagram + X)
+
+ClipFleet now has a **four-channel distribution matrix**, available in the deployed [dashboard](https://clipfleet-ops.averymiddlebrook2014.workers.dev), with **one separately authorized lane per accepted platform**. Campaigns can restrict networks individually: activate only networks explicitly permitted by the sponsor and backed by your connected Content Rewards creator accounts.
+
+Each lane holds its own verified-by-you account preset, platform-specific 1080×1920 render variant, GitHub Actions video URL, review checkpoint, publication link/time, 30-minute submission timer, sponsor result and persistent submission history. The planner produces up to four independent lane videos per campaign (within the existing six-jobs/day free-tier cap), and GitHub Actions renders at most two per run. Failed renders can be reset independently after confirmed failure; completed submissions cannot be duplicated.
+
+If configured, Grok Bot receives **the target platform and handle on each individual webhook job**, rather than a generic campaign task. Bot dispatch is an authorized browser-navigation workflow, not a guaranteed Content Rewards submission or payout. Cross-posting is not assumed to be allowed for every campaign; inspect the official brief and ensure distinct compliant edits.
+
+**Getting started:** [Four-platform usage and account setup](docs/MULTI-PLATFORM.md).
+
 ## Grok Bot browser-agent integration
 
 **Grok Bot routine handoffs are now implemented, but you must connect your own Grok Bot routine.** See [Grok Bot integration & setup](docs/GROKBOT-INTEGRATION.md).
