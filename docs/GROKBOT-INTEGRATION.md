@@ -4,6 +4,12 @@
 
 **Product documentation:** https://prod.cursor.com/help/grok-bot/routines
 
+## Multi-platform handoffs
+
+ClipFleet now creates **one unique render job and one Bot handoff per activated network** in the [four-platform distribution matrix](MULTI-PLATFORM.md). Each webhook also carries `target_platform` (one of `youtube`, `tiktok`, `instagram`, `x`) and `publishing_handle` (a publicly saved creator handle). Treat these as routing hints, **not proof** that the creator account is connected or authorized; recheck inside Content Rewards.
+
+In the Bot routine, use only the target platform/account from that individual job. Never post a YouTube-targeted clip on TikTok just because both accounts exist, never submit the same rendered job twice, and never assume the campaign pays separately on all four networks. Each posting attempt must respect the brief and obtain approval as required. ClipFleet keeps separate per-platform publication, submission, and outcome records.
+
 ## What ClipFleet handles
 
 1. A previously authorized ClipFleet job reaches `ready_for_review`, with an exact GitHub Actions artifact-run link.
