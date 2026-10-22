@@ -86,3 +86,35 @@ button:disabled{opacity:.5;cursor:wait}
 .grokbot-muted,.grokbot-note{font-size:12px;color:#a9becd;line-height:1.55;margin:10px 0 5px}
 .grokbot-note{color:#e3d5ab}
 @media(max-width:600px){.grokbot-item{flex-wrap:wrap}.grokbot-task{padding:12px}}
+
+/* Separate creator publishing lanes / four platform distribution */
+.distribution-panel{border-color:#476a82;background:linear-gradient(155deg,#192838,#111f31)}
+.distribution-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:15px 0 19px}
+.distribution-toolbar label{font-size:12px;flex:1;min-width:220px;max-width:520px;color:#cadce8;font-weight:750}
+.distribution-toolbar select{margin-top:8px}
+.distribution-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.distribution-card{border-radius:14px;padding:20px;background:#172f43;border:1px solid #3a526e;min-width:0;display:grid;align-content:start;gap:12px}
+.distribution-card-top{display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:space-between}
+.distribution-card-top h3{font-size:19px;margin:0;color:#e9f9fa}
+.distribution-badge{font-size:11px;color:#bee8ff;border:1px solid #49677b;background:#203f50;padding:4px 10px;border-radius:20px;text-transform:capitalize;font-weight:850}
+.distribution-badge.recorded{color:#bcf6cb;border-color:#4a8975}
+.distribution-configuration{display:grid;gap:10px;padding:12px;border:1px solid #3a586f;background:#112638;border-radius:10px}
+.distribution-check{display:flex;gap:10px;font-size:12px;color:#d0e3ea;align-items:start;line-height:1.55}
+.distribution-check input{width:18px;height:18px;accent-color:#4bdba9;flex:none}
+.distribution-field{display:grid;gap:7px;font-size:12px;color:#c3d5e4;font-weight:750}
+.distribution-field input,.distribution-field select{max-width:100%}
+.distribution-nav{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.distribution-link{display:inline-block;color:#a6e7fd;background:#28495d;border:1px solid #3c677b;border-radius:8px;padding:8px 10px;font-size:12px;text-decoration:none;font-weight:700}
+.distribution-link:hover{filter:brightness(1.2)}
+.distribution-muted{font-size:12px;color:#adc5d3;line-height:1.55;margin:0}
+.distribution-error{font-size:12px;color:#ffd1bd;font-weight:800;overflow-wrap:anywhere}
+.distribution-deadline{font-size:13px;color:#87f5be;font-weight:850}
+.distribution-posturl{font-size:11px;color:#a4c6d2;overflow-wrap:anywhere}
+.distribution-handoff{background:#252b38;border:1px solid #605a62;border-radius:11px;padding:16px;margin:16px 0 8px}
+.distribution-handoff strong{color:#f2d5a7}.distribution-handoff p{color:#c7c6d4;font-size:12px;line-height:1.55}
+.distribution-ledger{background:#142a3b;border:1px solid #314e63;padding:14px;border-radius:12px;margin-top:18px}
+.distribution-ledger h3{margin:0 0 12px}
+.distribution-ledger-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px;border-top:1px solid #304859;padding:12px 0;font-size:12px;color:#aac3d1}
+.distribution-ledger-row strong{color:#d6f5e7}
+@media(max-width:1100px){.distribution-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.distribution-card{padding:14px}.distribution-toolbar button{flex:1}}
