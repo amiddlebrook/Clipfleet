@@ -171,6 +171,12 @@ export async function distributionRoute(req,env,path,url){
    if(!row)return error('Recorded submission missing',409);
    await env.DB.prepare('UPDATE distribution_targets SET outcome=?,status=?,updated_at=? WHERE campaign_id=? AND platform=?')
     .bind(data.outcome,data.outcome,now,cid,platform).run();
+  }else if(action==='retry_render'){
+   if(lane.status!=='queued'||!lane.job_id)return error('Only failed, unpublished render jobs can be retried',409);
+   const job=await env.DB.prepare('SELECT status FROM jobs WHERE id=? AND campaign_id=?').bind(lane.job_id,cid).first();
+   if(job?.status!=='failed')return error('Wait for the current render to finish before retrying',409);
+   await env.DB.prepare(`UPDATE distribution_targets SET job_id=NULL,status='configured',updated_at=?
+     WHERE campaign_id=? AND platform=? AND status='queued'`).bind(now,cid,platform).run();
   }else if(action==='next'){
    if(!['submitted','accepted','rejected','paid'].includes(lane.status))return error('Record actual submission before starting a new clip',409);
    await env.DB.prepare(`UPDATE distribution_targets SET job_id=NULL,status='configured',published_url=NULL,published_at=NULL,
