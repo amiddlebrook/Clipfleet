@@ -1,7 +1,33 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ClipFleet — Campaign operations</title><meta name="description" content="Cloudflare-native rights-aware clipping campaign operations, sourcing and production queue."><link rel="stylesheet" href="/style.css"></head><body>
-<div class="shell"><aside><div class="logo"><span class="mark">▸</span> CLIP<span>FLEET</span></div><p class="subtitle">Creator operations intelligence</p><div class="navitem active">◈ &nbsp; Mission control</div><div class="navitem">⌕ &nbsp; Campaign intelligence</div><div class="navitem">▥ &nbsp; Production queue</div><div class="aside-note"><strong>Compliance-first automation</strong><p>Automate research, scoring, rendering and QA. Posting and Content Rewards submission remain separate until authorized integrations are connected.</p></div></aside>
+<div class="shell"><aside><div class="logo"><span class="mark">▸</span> CLIP<span>FLEET</span></div><p class="subtitle">Creator operations intelligence</p><a class="navitem active" href="#connections">◈ &nbsp; Connect everything</a><div class="navitem">⌕ &nbsp; Campaign intelligence</div><div class="navitem">▥ &nbsp; Production queue</div><div class="aside-note"><strong>Compliance-first automation</strong><p>Automate research, scoring, rendering and QA. Posting and Content Rewards submission remain separate until authorized integrations are connected.</p></div></aside>
 <main><header class="top"><div><div class="eyebrow">CONTENT REWARDS PIPELINE</div><h1>Mission control <span class="dot"></span></h1><p>Discover opportunities. Approve their briefs once. Produce distinctive clips on a bounded schedule.</p></div><a class="minor" href="https://contentrewards.com/c/discover" rel="noopener noreferrer" target="_blank">Official campaign directory ↗</a></header>
 <div class="auth"><div><label for="token">Administrator token (optional to browse)</label><input id="token" placeholder="Paste secret; it is kept only in this tab's memory" type="password" autocomplete="off"></div><button class="primary" id="connect">Connect dashboard</button><span id="connection" class="status">Loading public campaigns…</span></div>
+<section class="panel connection-hub" id="connections">
+ <div class="panel-head">
+  <div><div class="eyebrow">ACCOUNT SETUP · ONE PLACE FOR EVERYTHING</div>
+   <h2>Connect everything</h2>
+   <p>Open every official sign-in or connection screen from here, then come back and record that you completed it. ClipFleet never asks for social passwords or pretends a link is OAuth.</p>
+  </div>
+  <a class="minor" href="https://github.com/amiddlebrook/Clipfleet/blob/main/docs/CONNECT-ACCOUNTS.md" target="_blank" rel="noopener noreferrer">Full setup guide ↗</a>
+ </div>
+ <div class="connection-hub-head">
+  <div class="connection-meter-details"><strong id="connection-progress">0 of 8 confirmed</strong><span id="connection-summary">Connect dashboard to save setup progress across visits.</span></div>
+  <button type="button" id="connection-refresh">Refresh setup status</button>
+ </div>
+ <div class="connection-meter" aria-label="Account setup progress"><div id="connection-meter-fill"></div></div>
+ <div id="connection-cards" class="connection-cards">
+  <p class="empty">Loading one-click account setup links…</p>
+ </div>
+ <div class="connection-footer">
+  <div><strong>ClipFleet infrastructure</strong><p>Cloudflare Worker is hosting this page. GitHub handles deployments and video rendering; external creator accounts must be connected on their own official sites.</p></div>
+  <div class="connection-quicklinks">
+   <a href="https://github.com/amiddlebrook/Clipfleet/actions" target="_blank" rel="noopener noreferrer">GitHub Actions ↗</a>
+   <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener noreferrer">Cloudflare dashboard ↗</a>
+   <a href="https://github.com/amiddlebrook/Clipfleet/settings/secrets/actions" target="_blank" rel="noopener noreferrer">Grok Bot webhook secrets ↗</a>
+  </div>
+ </div>
+ <p id="connection-hub-feedback" class="feedback" role="status" aria-live="polite"></p>
+</section>
 <div class="stats"><div class="stat"><small>CAMPAIGNS INDEXED</small><strong id="s-campaigns">—</strong><span>public listings only</span></div><div class="stat"><small>ACCEPTING + BUDGET</small><strong id="s-active">—</strong><span>verify eligibility before joining</span></div><div class="stat"><small>JOBS QUEUED</small><strong id="s-queued">—</strong><span>up to six planned daily</span></div><div class="stat"><small>RENDERS READY</small><strong id="s-ready">—</strong><span>review platform requirements</span></div></div>
 <section class="panel distribution-panel" id="distribution">
  <div class="panel-head"><div><div class="eyebrow">FOUR-CHANNEL DISTRIBUTION</div>
@@ -74,4 +100,4 @@
 <label class="full-label confirmation"><input name="requires_preapproval" type="checkbox"> Brand requires draft pre-approval</label>
 <label class="full-label confirmation"><input name="draft_approved" type="checkbox"> Where required, the brand approved my actual draft before this run</label><label>Versions per campaign <select name="max_variants"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label><label>Campaign-approved creative <select name="allows_original_graphic"><option value="true">Original graphics allowed</option><option value="false">Brand footage required</option></select></label><label>Footage path (if applicable)<input name="source_video" placeholder="assets/campaign-footage.mp4"></label><label>Or brand MP4 HTTPS asset URL<input type="url" name="source_video_url" placeholder="https://authorized-cdn.example/clip.mp4"></label><div class="verify"><label><input type="checkbox" name="verified_eligibility" required> My Content Rewards account has joined and is eligible.</label><label><input type="checkbox" name="assets_licensed" required> I have confirmed permission to use these assets/creative.</label><label><input type="checkbox" name="brief_reviewed" required> I read every requirement and this format is allowed.</label></div><button type="submit" class="primary">Authorize &amp; arm automatic rendering</button><span id="approved-status" class="feedback"></span></form></section>
 <section class="panel"><div class="panel-head"><div><h2>Production queue</h2><p>Runs through GitHub Actions with FFmpeg.</p></div><button id="plan">Plan approved jobs</button></div><div id="jobs" class="jobs"><p class="empty">No jobs loaded.</p></div><div class="alert"><strong>Critical 30-minute window</strong><p>After posting a public clip on your verified social account, you must submit the URL to the correct Content Rewards campaign within 30 minutes. Rendering is not a submission.</p><a href="https://help.contentrewards.com/en/articles/15319814-submit-a-video" target="_blank" rel="noopener noreferrer">Read submission rules ↗</a></div></section></div>
-<footer><span>ClipFleet · zero mandatory paid integrations · AI optional · documented rights only</span><span>GitHub Actions + Cloudflare Workers + D1</span></footer></main></div><script src="/distribution.js" defer></script><script src="/grokbot.js" defer></script><script src="/journey.js" defer></script><script src="/app.js" defer></script></body></html>
+<footer><span>ClipFleet · zero mandatory paid integrations · AI optional · documented rights only</span><span>GitHub Actions + Cloudflare Workers + D1</span></footer></main></div><script src="/connections.js" defer></script><script src="/distribution.js" defer></script><script src="/grokbot.js" defer></script><script src="/journey.js" defer></script><script src="/app.js" defer></script></body></html>
