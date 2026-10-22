@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import worker from '../worker/index.js';
 const CID='5ad699cd-7aed-44f7-9b57-489fdd6e2628';
 function setup(){
- const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0006_grokbot_handoff.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0007_platform_distribution.sql',import.meta.url),'utf-8'));
+ const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0006_grokbot_handoff.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0007_platform_distribution.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0008_onboarding_hub.sql',import.meta.url),'utf-8'));
  const DB={prepare:(q)=>({bind(...args){this.args=args;return this},async first(){return sql.prepare(q).get(...(this.args||[]))||null},async run(){return {meta:{changes:sql.prepare(q).run(...(this.args||[])).changes}}},async all(){return {results:sql.prepare(q).all(...(this.args||[]))}}})};
  return {sql,env:{DB,ADMIN_TOKEN:'abcdef0123456789abcdef0123456789',GROKBOT_CALLBACK_TOKEN:'botcallbackabcdef0123456789abcdef0123456789'}};
 }
@@ -290,4 +290,39 @@ test('four-platform dashboard loads safe form widgets and input checks',()=>{
  assert.match(html,/src="\/distribution.js"/);
  for(const platform of ['youtube','tiktok','instagram','x'])assert.match(script,new RegExp("id:'"+platform+"'"));
  assert.match(script,/Submit within ~/);
+});
+
+test('Connect Everything hub persists admin-only confirmations and requires social account presets',async()=>{
+ const {env,sql}=setup();
+ const list=await call(env,'/api/onboarding');
+ assert.equal(list.code,200);
+ assert.equal(Object.keys(list.json.steps).length,0);
+ assert.equal(list.json.platform_note.includes('your own confirmations'),true);
+ assert.equal((await call(env,'/api/onboarding','GET',undefined,false)).code,401);
+ const confirm=(step_id,completed,auth=true)=>call(env,'/api/onboarding','POST',{step_id,completed,confirm:true},auth);
+ assert.equal((await confirm('contentrewards',true)).code,200);
+ const v=await call(env,'/api/onboarding');
+ assert.equal(v.json.steps.contentrewards.completed,true);
+ assert.equal(v.json.steps.contentrewards.verification,'self_reported');
+ assert.equal((await confirm('youtube',true)).code,409,'social connection must have a saved preset');
+ assert.equal((await confirm('grokbot_webhook',true)).code,200,'webhook is only an operator-marked setup step');
+ const preset=await call(env,'/api/social-presets','POST',{platform:'youtube',handle:'clipchannel',confirmed_connected:true});
+ assert.equal(preset.code,201);
+ assert.equal((await confirm('youtube',true)).code,200);
+ assert.equal((await call(env,'/api/onboarding')).json.social_presets.youtube,1);
+ assert.equal((await confirm('youtube',false)).code,200);
+ assert.equal((await call(env,'/api/onboarding')).json.steps.youtube.completed,false);
+ assert.equal((await confirm('not_valid',true)).code,400);
+ assert.equal((await confirm('whop',true,false)).code,401);
+ sql.close();
+});
+test('Connect Everything renders actionable first-party links, no fake OAuth callback',()=>{
+ const markup=readFileSync(new URL('../public/index.html',import.meta.url),'utf-8');
+ const app=readFileSync(new URL('../public/connections.js',import.meta.url),'utf-8');
+ assert.match(markup,/id="connections"/);assert.match(markup,/src="\/connections.js"/);
+ for(const platform of ['youtube','tiktok','instagram','x'])assert.match(app,new RegExp("key:'"+platform+"'"));
+ assert.match(app,/\/api\/onboarding/);
+ assert.match(app,/self-confirmed, not independently OAuth-verified/);
+ assert.match(app,/contentrewards.com\/c\/discover/);
+ assert.match(app,/grokbot-dispatch.yml/);
 });
