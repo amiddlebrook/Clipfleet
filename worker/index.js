@@ -1,3 +1,4 @@
+import {grokBotReport,grokBotAdmin,autoQueueGrokBot} from './grokbot.js';
 import {workflowRoute} from './progress.js';
 /** ClipFleet Cloudflare Worker API. Free-tier D1, no paid external services. */
 const JSON_HEADERS = {'content-type':'application/json;charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"default-src 'none'; frame-ancestors 'none'"};
@@ -84,9 +85,11 @@ async function handler(request,env){
   const ready=await env.DB.prepare("SELECT COUNT(*) n FROM jobs WHERE status='ready_for_review'").first();
   return out({campaigns:Number(campaigns?.n||0),active:Number(active?.n||0),queued:Number(queue?.n||0),ready:Number(ready?.n||0)});
  }
+ if(path==='/api/grokbot/report')return grokBotReport(request,env,path);
  if(!env.ADMIN_TOKEN)return err('Deployment missing ADMIN_TOKEN secret',503);
  if(!eq(request.headers.get('authorization'),`Bearer ${env.ADMIN_TOKEN}`))return err('Unauthorized',401);
 
+ const botApi=await grokBotAdmin(request,env,path);if(botApi)return botApi;
  // Access is protected by ADMIN_TOKEN above. Presets are not linked OAuth accounts.
  if(path==='/api/social-presets'&&request.method==='GET'){
   const rows=await env.DB.prepare('SELECT id,platform,handle,profile_url,confirmed_connected,created_at FROM social_presets ORDER BY created_at DESC LIMIT 30').all();
@@ -224,6 +227,7 @@ async function handler(request,env){
   if(runUrl&&!/^https:\/\/github\.com\/amiddlebrook\/Clipfleet\/actions\/runs\/[1-9][0-9]{3,20}$/.test(runUrl))return err('Invalid GitHub Actions run link');
   const result=await env.DB.prepare(`UPDATE jobs SET status=?,completed_at=?,output_sha256=?,error=?,actions_run_url=? WHERE id=? AND status='rendering' RETURNING id`).bind(data.status,new Date().toISOString(),String(data.output_sha256||'').slice(0,64),String(data.error||'').slice(0,200),runUrl||null,match[1]).first();
   if(!result)return err('Job not found or not rendering',409);
+  if(data.status==='ready_for_review'&&runUrl)await autoQueueGrokBot(env,match[1]);
   return out({id:match[1],status:data.status});
  }
  return err('Not found',404);
