@@ -69,3 +69,20 @@ button:disabled{opacity:.5;cursor:wait}
 .journey-history-row{color:#b7cad4;font-size:12px;border-bottom:1px solid #284457;padding-bottom:10px}
 #journey-error{display:block;margin-top:11px;font-size:13px;color:#ffd1bd}
 @media(max-width:700px){.journey-summary{padding:15px}.journey-step{padding:13px}.journey-controls{margin-left:0}.journey-muted{margin-left:0}.journey-step-head{gap:9px}.journey-step-number{height:32px;width:32px}.journey-step-heading h4{font-size:15px}.journey-state{font-size:10px}.journey-count strong{font-size:23px}}
+
+/* Grok Bot handoff command center */
+.grokbot-panel{background:linear-gradient(135deg,#172939,#121c32);border-color:#4a607d}
+.grokbot-actions{display:flex;align-items:center;flex-wrap:wrap;gap:11px;margin:12px 0}
+.grokbot-link{display:inline-block;border-radius:9px;padding:8px 11px;background:#233a4f;border:1px solid #395975;color:#afe9ff;text-decoration:none;font-size:12px;font-weight:700}
+.grokbot-list{display:grid;gap:12px;margin-top:13px}
+.grokbot-task,.grokbot-unassigned{background:#15283a;border:1px solid #304d66;border-radius:12px;padding:16px}
+.grokbot-unassigned>strong{display:block;margin-bottom:10px;font-size:13px;color:#d4f6e9}
+.grokbot-item{display:flex;align-items:center;justify-content:space-between;gap:13px;margin:8px 0;padding:10px 12px;border-radius:8px;background:#1e3548;font-size:12px}
+.grokbot-task-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.grokbot-task-head strong{font-size:14px}
+.grokbot-badge{padding:4px 9px;border-radius:30px;background:#2e465b;color:#cce7f1;font-size:10px;font-weight:900;letter-spacing:.04em}
+.grokbot-accepted{background:#2c4d59;color:#a3e3fd}.grokbot-reported{background:#245044;color:#a0f2d2}
+.grokbot-failed,.grokbot-blocked{background:#55383f;color:#ffd3c1}.grokbot-dispatching{background:#4d4732;color:#ffe1a6}
+.grokbot-muted,.grokbot-note{font-size:12px;color:#a9becd;line-height:1.55;margin:10px 0 5px}
+.grokbot-note{color:#e3d5ab}
+@media(max-width:600px){.grokbot-item{flex-wrap:wrap}.grokbot-task{padding:12px}}
