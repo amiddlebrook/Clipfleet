@@ -99,7 +99,9 @@ def make_script(job: dict[str, Any], variant: int) -> list[str]:
     title = job.get('product_name') or job.get('campaign_title') or 'Featured project'
     benefit = job.get('approved_value_prop') or 'See the official product details'
     action = job.get('approved_cta') or 'Learn more from the official campaign'
-    hooks = [f'What makes {title} interesting?', f'A quick look at {title}', f'Here is one thing to know about {title}']
+    # Platform-specific introductions are variations on approved campaign text, not new product claims.
+    hooks = [f'What makes {title} interesting?', f'A quick look at {title}',
+             f'One thing to know about {title}', f'{title} — the essentials']
     return [('DEMO ONLY - NOT A CAMPAIGN' if job.get('demo_only') else 'Paid promotion'), hooks[variant % len(hooks)], benefit[:130], action[:130]]
 
 
@@ -163,11 +165,16 @@ def make_video(job: dict[str, Any], output: Path, variant: int = 0) -> dict[str,
         raise ValueError('Campaign does not authorize text-only original graphics; licensed footage is required')
     if not ffmpeg_exists():
         raise RuntimeError('ffmpeg and ffprobe are required for rendering')
-    duration = max(15, min(45, int(job.get('duration_seconds', 25))))
+    target = str(job.get('target_platform') or '').lower()
+    if target and (target not in {'youtube', 'tiktok', 'instagram', 'x'}
+                   or target not in job.get('allowed_platforms', [])):
+        raise ValueError('Platform must be expressly permitted by this reviewed campaign')
+    default_duration = {'youtube': 26, 'tiktok': 22, 'instagram': 29, 'x': 18}.get(target, 25)
+    duration = max(15, min(45, int(job.get('duration_seconds', default_duration))))
     output.parent.mkdir(parents=True, exist_ok=True)
     lines = make_script(job, variant)
     frame_t = duration / len(lines)
-    color = ['0x122b3c', '0x19434a', '0x303a52'][variant % 3]
+    color = ['0x122b3c', '0x19434a', '0x303a52', '0x46324e'][variant % 4]
     font = next((p for p in ['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf', 'C:/Windows/Fonts/arialbd.ttf'] if Path(p).exists()), None)
     if not font: raise RuntimeError('Install DejaVu Sans (Linux) or specify a system font')
     # Avoid ffmpeg string interpolation for user text: use UTF-8 text files with drawtext textfile.
@@ -208,6 +215,7 @@ def make_video(job: dict[str, Any], output: Path, variant: int = 0) -> dict[str,
     fingerprint = hashlib.sha256(output.read_bytes()).hexdigest()
     return {'path': str(output), 'duration_seconds': round(sec,2), 'sha256':fingerprint,
             'resolution':'1080x1920','caption': (job.get('required_caption','') if job.get('demo_only') else (job.get('required_caption','') + '\nPaid promotion')),
+            'target_platform': target or None, 'posting_account_handle': job.get('posting_account_handle'),
             'disclosure_in_video': not bool(job.get('demo_only')), 'demo_only':bool(job.get('demo_only')), 'campaign_id': job['campaign_id'], 'campaign_url': job.get('campaign_url'),
             'published_url':None, 'submission_status':'not_submitted'}
 
