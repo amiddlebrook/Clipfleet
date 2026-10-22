@@ -22,6 +22,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLIPFLEET_ADMIN_TOKEN: ${{ secrets.CLIPFLEET_ADMIN_TOKEN }}
+      GROKBOT_CALLBACK_TOKEN: ${{ secrets.GROKBOT_CALLBACK_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,6 +60,17 @@ jobs:
             head -c 40 /dev/urandom | od -An -tx1 | tr -d ' \n' | npx wrangler secret put ADMIN_TOKEN
             echo "WARNING: No CLIPFLEET_ADMIN_TOKEN configured: public dashboard and scheduled discovery only."
             echo "To enable admin controls and automated import, set CLIPFLEET_ADMIN_TOKEN in GitHub Secrets and redeploy."
+          fi
+      - name: Install limited Grok Bot callback secret (optional)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${GROKBOT_CALLBACK_TOKEN:-}" ]; then
+            test "${#GROKBOT_CALLBACK_TOKEN}" -ge 32
+            printf '%s' "$GROKBOT_CALLBACK_TOKEN" | npx wrangler secret put GROKBOT_CALLBACK_TOKEN
+            echo "Limited Grok Bot callback enabled."
+          else
+            echo "No limited callback secret configured; Grok Bot reports must be inspected in its own chat."
           fi
       - name: Check live Worker health
         shell: bash
