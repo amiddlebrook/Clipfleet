@@ -35,6 +35,8 @@ def send_task(task):
       'campaign_url':task['campaign_url'],
       'render_run_url':task['actions_run_url'],
       'render_sha256':task['output_sha256'],
+      'target_platform':task.get('platform',''),
+      'publishing_handle':task.get('social_handle',''),
       'dashboard_url':BASE,
       'instructions_url':'https://github.com/amiddlebrook/Clipfleet/blob/main/docs/GROKBOT-INTEGRATION.md',
       'approval_required_for':['publication','campaign_submission','claims_of_eligibility_or_rights'],
