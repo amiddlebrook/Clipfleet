@@ -1,3 +1,4 @@
+import {onboardingRoute} from './onboarding.js';
 import {distributionRoute,planDistribution} from './distribution.js';
 import {grokBotReport,grokBotAdmin,autoQueueGrokBot} from './grokbot.js';
 import {workflowRoute} from './progress.js';
@@ -97,6 +98,7 @@ async function handler(request,env){
  if(!eq(request.headers.get('authorization'),`Bearer ${env.ADMIN_TOKEN}`))return err('Unauthorized',401);
 
  const botApi=await grokBotAdmin(request,env,path);if(botApi)return botApi;
+ const onb=await onboardingRoute(request,env,path);if(onb)return onb;
  const distribution=await distributionRoute(request,env,path,new URL(request.url));if(distribution)return distribution;
  // Access is protected by ADMIN_TOKEN above. Presets are not linked OAuth accounts.
  if(path==='/api/social-presets'&&request.method==='GET'){
