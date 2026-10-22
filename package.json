@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/worker.test.mjs",
-    "check": "node --check worker/index.js && node --check worker/progress.js && node --check worker/grokbot.js && node --check public/app.js && node --check public/journey.js && node --check public/grokbot.js && node --check worker/distribution.js && node --check public/distribution.js"
+    "check": "node --check worker/index.js && node --check worker/progress.js && node --check worker/grokbot.js && node --check public/app.js && node --check public/journey.js && node --check public/grokbot.js && node --check worker/distribution.js && node --check public/distribution.js && node --check worker/onboarding.js && node --check public/connections.js"
   }
 }
