@@ -29,6 +29,14 @@ For account verification, [follow the official Content Rewards guide](https://he
 
 **No change to publishing:** ClipFleet's scheduled pipeline still prepares video artifacts for review, not unattended Content Rewards submissions, and nothing here guarantees earnings.
 
+## Connect Everything — account launchpad
+
+The deployed dashboard now includes a **Connect Everything** section, before campaign planning, with official one-click navigation for Content Rewards, Whop payouts, Grok Bot setup and webhook secrets, YouTube, TikTok, Instagram and X. Each service card links to its official login/onboarding flow and allows you to explicitly mark setup done; those confirmations persist in private Cloudflare D1.
+
+**Important:** A completion checkmark is only your own statement. Social account ownership/connection happens within Content Rewards, Whop payout verification happens on Whop, and Grok Bot's authenticated webhook credentials must be configured in GitHub. ClipFleet does not store passwords or implement an unapproved OAuth shortcut. Social buttons take you to the official flow and to ClipFleet's saved account presets.
+
+See **[Account connection instructions](docs/CONNECT-ACCOUNTS.md)**.
+
 ## Four-platform distribution (YouTube + TikTok + Instagram + X)
 
 ClipFleet now has a **four-channel distribution matrix**, available in the deployed [dashboard](https://clipfleet-ops.averymiddlebrook2014.workers.dev), with **one separately authorized lane per accepted platform**. Campaigns can restrict networks individually: activate only networks explicitly permitted by the sponsor and backed by your connected Content Rewards creator accounts.
