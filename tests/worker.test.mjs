@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import worker from '../worker/index.js';
 const CID='5ad699cd-7aed-44f7-9b57-489fdd6e2628';
 function setup(){
- const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0006_grokbot_handoff.sql',import.meta.url),'utf-8'));
+ const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0006_grokbot_handoff.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0007_platform_distribution.sql',import.meta.url),'utf-8'));
  const DB={prepare:(q)=>({bind(...args){this.args=args;return this},async first(){return sql.prepare(q).get(...(this.args||[]))||null},async run(){return {meta:{changes:sql.prepare(q).run(...(this.args||[])).changes}}},async all(){return {results:sql.prepare(q).all(...(this.args||[]))}}})};
  return {sql,env:{DB,ADMIN_TOKEN:'abcdef0123456789abcdef0123456789',GROKBOT_CALLBACK_TOKEN:'botcallbackabcdef0123456789abcdef0123456789'}};
 }
@@ -195,4 +195,93 @@ test('Grok Bot links and scripts are included in the dashboard',()=>{
  assert.match(html,/src="\/grokbot.js"/);
  assert.match(js,/callback_configured/);
  assert.match(js,/Accepted = webhook run started/);
+});
+
+test('four separate publishing lanes render distinct videos, route to exact accounts, and preserve submission histories',async()=>{
+ const {env,sql}=setup();
+ const post=(route,body)=>call(env,route,'POST',body);
+ await post('/api/import',{campaigns:[{id:CID,title:'Multi-channel brand',model:'per_post',rate:15,
+  budget_remaining:1000,accepting:true}]});
+ const all=['youtube','tiktok','instagram','x'];
+ const handles=['samplechannel','sampletiktok','samplereels','sampletweets'];
+ const saved=[];
+ for(let i=0;i<4;i++){
+  const p=await post('/api/social-presets',{platform:all[i],handle:handles[i],confirmed_connected:true});
+  assert.equal(p.code,201);saved.push(p.json);
+ }
+ const workflow=async(action,rest={})=>post('/api/workflow',{campaign_id:CID,action,confirm:true,...rest});
+ assert.equal((await workflow('joined')).code,200);
+ assert.equal((await workflow('social',{social_preset_id:saved[0].id,platform_allowed_by_campaign:true})).code,200);
+ assert.equal((await workflow('brief')).code,200);
+ assert.equal((await workflow('rights',{rights_evidence:'Brand approves original graphics for every target platform'})).code,200);
+ const prof={campaign_id:CID,verified_eligibility:true,assets_licensed:true,brief_reviewed:true,
+  rights_evidence:'Brand approved creative for these platforms',allows_original_graphic:true,
+  allowed_platforms:['youtube'],product_name:'Legitimate brand',approved_value_prop:'Approved statement',
+  approved_cta:'Learn more',required_caption:'#ad',max_variants:1};
+ assert.equal((await post('/api/profiles',prof)).code,201);
+ const configuration=await post('/api/distribution/setup',{
+  campaign_id:CID,confirm:true,
+  lanes:all.map((platform,i)=>({platform,preset_id:saved[i].id,campaign_permits_platform:true}))
+ });
+ assert.equal(configuration.code,201,JSON.stringify(configuration.json));
+ const initial=await call(env,'/api/distribution?campaign_id='+CID);
+ assert.equal(initial.json.lanes.length,4);
+ assert.equal((await post('/api/plan',{})).json.platform_planned,4);
+ assert.equal((await post('/api/distribution/plan',{confirm:true})).json.planned,0,'no duplicate renders');
+ const jobs=[];
+ for(let i=0;i<4;i++){
+  const claimed=await post('/api/jobs/claim',{worker:'github-actions'});
+  assert.equal(claimed.code,200);const job=claimed.json.job;
+  assert.ok(job);
+  const payload=JSON.parse(job.payload);
+  assert.equal(payload.target_platform,all[i]);
+  assert.equal(payload.variant,i);
+  assert.deepEqual(payload.allowed_platforms,[all[i]]);
+  assert.equal(payload.posting_account_handle,handles[i]);
+  jobs.push(job.id);
+  const done=await post('/api/jobs/'+job.id+'/complete',{
+    status:'ready_for_review',actions_run_url:'https://github.com/amiddlebrook/Clipfleet/actions/runs/39831992156',
+    output_sha256:String(i).repeat(64)
+  });assert.equal(done.code,200);
+ }
+ const check=await call(env,'/api/distribution?campaign_id='+CID);
+ assert.equal(check.json.lanes.length,4);
+ assert.ok(check.json.lanes.every(x=>x.render_status==='ready_for_review'));
+ const report=(platform,action,extra={})=>post('/api/distribution/progress',{
+   campaign_id:CID,platform,action,confirm:true,...extra});
+ const posts={
+  youtube:'https://www.youtube.com/shorts/Abcdefghi99',
+  tiktok:'https://www.tiktok.com/@sampletiktok/video/123456789011222',
+  instagram:'https://www.instagram.com/reel/AbcD1234567/',
+  x:'https://x.com/sampletweets/status/123456789011222'
+ };
+ const date=new Date().toISOString();
+ assert.equal((await report('x','published',{published_url:posts.x,published_at:date})).code,409,'skip-review blocked');
+ for(const platform of all){
+  assert.equal((await report(platform,'review')).code,200);
+  assert.equal((await report(platform,'published',{published_url:posts.youtube,published_at:date})).code,
+    platform==='youtube'?200:400,'mismatched platform URL rejected');
+  if(platform!=='youtube')assert.equal((await report(platform,'published',{published_url:posts[platform],published_at:date})).code,200);
+ }
+ assert.equal((await report('youtube','submitted',{submission_reference:'first real receipt'})).code,200);
+ assert.equal((await report('youtube','submitted',{})).code,409,'cannot submit same platform post twice');
+ let snap=await call(env,'/api/distribution?campaign_id='+CID);
+ assert.equal(snap.json.submissions.length,1);
+ assert.equal(snap.json.lanes.find(x=>x.platform==='tiktok').status,'published');
+ assert.equal((await report('youtube','outcome',{outcome:'paid'})).code,200);
+ assert.equal((await report('youtube','next')).code,200);
+ snap=await call(env,'/api/distribution?campaign_id='+CID);
+ assert.equal(snap.json.lanes.find(x=>x.platform==='youtube').job_id,null);
+ assert.equal(snap.json.submissions.length,1,'old submission is retained');
+ assert.equal(snap.json.submissions[0].outcome,'paid');
+ assert.equal((await call(env,'/api/distribution?campaign_id='+CID,'GET',undefined,false)).code,401);
+ sql.close();
+});
+test('four-platform dashboard loads safe form widgets and input checks',()=>{
+ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf-8');
+ const script=readFileSync(new URL('../public/distribution.js',import.meta.url),'utf-8');
+ assert.match(html,/id="distribution"/);
+ assert.match(html,/src="\/distribution.js"/);
+ for(const platform of ['youtube','tiktok','instagram','x'])assert.match(script,new RegExp("id:'"+platform+"'"));
+ assert.match(script,/submit within 30/i);
 });
