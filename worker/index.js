@@ -1,3 +1,4 @@
+import {distributionRoute,planDistribution} from './distribution.js';
 import {grokBotReport,grokBotAdmin,autoQueueGrokBot} from './grokbot.js';
 import {workflowRoute} from './progress.js';
 /** ClipFleet Cloudflare Worker API. Free-tier D1, no paid external services. */
@@ -34,6 +35,9 @@ async function plan(env){
   let slots=Math.max(0,6-Number(todays?.n||0)),planned=0;
   for(const row of rows){
     if(slots<=0)break;
+    // A campaign with platform lanes uses the independent four-channel planner instead.
+    const laneCount=await env.DB.prepare('SELECT COUNT(*) n FROM distribution_targets WHERE campaign_id=?').bind(row.campaign_id).first();
+    if(Number(laneCount?.n||0)>0)continue;
     // Do not run on unverified, inactive, exhausted or stale listings. Re-check each run.
     if(!row.accepting||!(row.budget_remaining>=20)||!row.detail_checked_at||Date.now()-Date.parse(row.detail_checked_at)>12*3600_000)continue;
     const profile=JSON.parse(row.payload);
@@ -49,7 +53,10 @@ async function plan(env){
       slots--;planned++;
     }
   }
-  return {planned,remaining_daily_capacity:slots};
+  // Use remaining daily capacity for four distinct platform-specific videos.
+  const lanes=await planDistribution(env,slots);
+  planned+=lanes.planned;
+  return {planned,legacy_planned:planned-lanes.planned,platform_planned:lanes.planned,remaining_daily_capacity:Math.max(0,slots-lanes.planned)};
 }
 async function feed(env){
  const urls=['https://contentrewards.com/c/discover','https://whop.com/contentrewards/'];
@@ -90,6 +97,7 @@ async function handler(request,env){
  if(!eq(request.headers.get('authorization'),`Bearer ${env.ADMIN_TOKEN}`))return err('Unauthorized',401);
 
  const botApi=await grokBotAdmin(request,env,path);if(botApi)return botApi;
+ const distribution=await distributionRoute(request,env,path,new URL(request.url));if(distribution)return distribution;
  // Access is protected by ADMIN_TOKEN above. Presets are not linked OAuth accounts.
  if(path==='/api/social-presets'&&request.method==='GET'){
   const rows=await env.DB.prepare('SELECT id,platform,handle,profile_url,confirmed_connected,created_at FROM social_presets ORDER BY created_at DESC LIMIT 30').all();
