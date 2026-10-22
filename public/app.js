@@ -129,6 +129,7 @@ async function load(){
  const [c,stat]=await Promise.all([api('GET','/api/campaigns'),api('GET','/api/stats')]);
  campaigns=c.campaigns||[];window.ClipFleetJourney?.setCampaigns(campaigns);
  jobs=token?(await api('GET','/api/jobs')).jobs||[]:[];
+ window.ClipFleetGrok?.setAccess(Boolean(token));window.ClipFleetGrok?.setJobs(jobs);
  $('s-campaigns').textContent=stat.campaigns;
  $('s-active').textContent=stat.active;
  $('s-queued').textContent=stat.queued;
@@ -136,6 +137,7 @@ async function load(){
  drawCampaigns();drawJobs();
  if(token)await refreshPresets();
  if(token)await window.ClipFleetJourney?.refresh();
+ if(token)await window.ClipFleetGrok?.refresh();
  setMessage(token?'Admin connected':'Public campaign browsing · connect admin for actions');
 }
 async function safe(task,messageNode){
@@ -228,5 +230,6 @@ form.addEventListener('submit',event=>{
  },$('approved-status'));
 });
 window.ClipFleetJourney?.initialize({api});
+window.ClipFleetGrok?.initialize({api});
 load().catch(e=>setMessage('Public feed not available: '+e.message));
 })();
