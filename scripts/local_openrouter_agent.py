@@ -124,10 +124,11 @@ def main() -> int:
     parser.add_argument("--mode", choices=["check-key", "review-campaign", "open-upload"], required=True)
     parser.add_argument("--campaign-url", help="Official Content Rewards campaign URL for AI reading")
     parser.add_argument("--platform", choices=sorted(PUBLISH_URLS), help="Social destination for manual posting")
-    parser.add_argument("--model", default=os.getenv("OPENROUTER_MODEL", "openrouter/free"))
+    parser.add_argument("--model", default=None)
     args = parser.parse_args()
     load_environment()
-    if not free_model(args.model):
+    model = args.model or os.getenv("OPENROUTER_MODEL", "openrouter/free")
+    if not free_model(model):
         parser.error("Only free models are allowed: openrouter/free or a valid :free model")
     if args.mode == "check-key":
         return check_key()
@@ -138,7 +139,7 @@ def main() -> int:
             url = campaign_url(args.campaign_url)
         except ValueError as exc:
             parser.error(str(exc))
-        return asyncio.run(review_campaign(url, args.model))
+        return asyncio.run(review_campaign(url, model))
     if not args.platform:
         parser.error("--platform required for open-upload")
     url = PUBLISH_URLS[args.platform]
