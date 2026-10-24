@@ -29,9 +29,17 @@ For account verification, [follow the official Content Rewards guide](https://he
 
 **No change to publishing:** ClipFleet's scheduled pipeline still prepares video artifacts for review, not unattended Content Rewards submissions, and nothing here guarantees earnings.
 
+## OpenRouter free browser agent — no subscription required
+
+ClipFleet now has a **no-paid-AI option** using your own [OpenRouter](https://openrouter.ai/settings/keys) `openrouter/free` or explicit `:free` model with the open-source [Browser Use](https://github.com/browser-use/browser-use) Python agent. The Windows installer is [setup-openrouter-agent.ps1](scripts/setup-openrouter-agent.ps1); the local runner is [local_openrouter_agent.py](scripts/local_openrouter_agent.py).
+
+It can open an isolated browser to **review public Content Rewards campaign briefs** and can navigate your regular browser to a social publishing website for manual follow-through. It does **not** yet autonomously upload, post, submit or access payout accounts. The script refuses paid model identifiers and stores API keys only in your gitignored local `.env`. Paid Grok Bot webhooks are optional, not a prerequisite.
+
+**[Full Windows setup and safety guide](docs/OPENROUTER-FREE-AGENT.md)**
+
 ## Connect Everything — account launchpad
 
-The deployed dashboard now includes a **Connect Everything** section, before campaign planning, with official one-click navigation for Content Rewards, Whop payouts, Grok Bot setup and webhook secrets, YouTube, TikTok, Instagram and X. Each service card links to its official login/onboarding flow and allows you to explicitly mark setup done; those confirmations persist in private Cloudflare D1.
+The deployed dashboard now includes a **Connect Everything** section, before campaign planning, with official one-click navigation for Content Rewards, Whop payouts, **OpenRouter Free AI and the local Browser Use agent**, YouTube, TikTok, Instagram and X. Optional Grok Bot links are retained separately. Each service card links to its official login/onboarding flow and allows you to explicitly mark setup done; those confirmations persist in private Cloudflare D1.
 
 **Important:** A completion checkmark is only your own statement. Social account ownership/connection happens within Content Rewards, Whop payout verification happens on Whop, and Grok Bot's authenticated webhook credentials must be configured in GitHub. ClipFleet does not store passwords or implement an unapproved OAuth shortcut. Social buttons take you to the official flow and to ClipFleet's saved account presets.
 
