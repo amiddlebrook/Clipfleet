@@ -26,11 +26,12 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Installing Chromium failed.' }
 
     if (-not (Test-Path .env)) {
-        @"
-# Local ClipFleet AI key — never commit this file or paste it into the public dashboard.
+        $template = @"
+# Local ClipFleet AI key - never commit or paste into the public dashboard.
 OPENROUTER_API_KEY=
 OPENROUTER_MODEL=openrouter/free
-"@ | Set-Content -Encoding utf8 .env
+"@
+        [System.IO.File]::WriteAllText((Join-Path $root '.env'), $template, (New-Object System.Text.UTF8Encoding($false)))
         Write-Host "Created .env. Paste your OpenRouter key into OPENROUTER_API_KEY locally."
     }
     Write-Host ''
