@@ -325,5 +325,5 @@ test('Connect Everything renders actionable first-party links, no fake OAuth cal
  assert.match(app,/\/api\/onboarding/);
  assert.match(app,/self-confirmed, not independently OAuth-verified/);
  assert.match(app,/contentrewards.com\/c\/discover/);
- assert.match(app,/local_openrouter_agent/);
+ assert.match(app,/setup-openrouter-agent\.ps1/);
 });
