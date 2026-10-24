@@ -1,7 +1,7 @@
 /* ClipFleet connection hub: navigation + explicit user-supplied confirmations.
  * Completion markers never represent verified third-party OAuth.
  */
-const KEYS=new Set(['contentrewards','whop','grokbot','grokbot_webhook','youtube','tiktok','instagram','x']);
+const KEYS=new Set(['contentrewards','whop','grokbot','grokbot_webhook','youtube','tiktok','instagram','x','openrouter','local_browser']);
 const H={'content-type':'application/json;charset=utf-8','cache-control':'no-store'};
 const send=(obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:H});
 const err=(message,status=400)=>send({error:message},status);
