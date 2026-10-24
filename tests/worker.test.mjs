@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import worker from '../worker/index.js';
 const CID='5ad699cd-7aed-44f7-9b57-489fdd6e2628';
 function setup(){
- const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0006_grokbot_handoff.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0007_platform_distribution.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0008_onboarding_hub.sql',import.meta.url),'utf-8'));
+ const sql=new DatabaseSync(':memory:');sql.exec('PRAGMA foreign_keys=ON');sql.exec(readFileSync(new URL('../migrations/0001_init.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0002_social_presets_ai.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0003_guided_workflows.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0004_submission_ledger.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0005_render_run_links.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0006_grokbot_handoff.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0007_platform_distribution.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0008_onboarding_hub.sql',import.meta.url),'utf-8'));sql.exec(readFileSync(new URL('../migrations/0009_openrouter_setup.sql',import.meta.url),'utf-8'));
  const DB={prepare:(q)=>({bind(...args){this.args=args;return this},async first(){return sql.prepare(q).get(...(this.args||[]))||null},async run(){return {meta:{changes:sql.prepare(q).run(...(this.args||[])).changes}}},async all(){return {results:sql.prepare(q).all(...(this.args||[]))}}})};
  return {sql,env:{DB,ADMIN_TOKEN:'abcdef0123456789abcdef0123456789',GROKBOT_CALLBACK_TOKEN:'botcallbackabcdef0123456789abcdef0123456789'}};
 }
@@ -305,7 +305,8 @@ test('Connect Everything hub persists admin-only confirmations and requires soci
  assert.equal(v.json.steps.contentrewards.completed,true);
  assert.equal(v.json.steps.contentrewards.verification,'self_reported');
  assert.equal((await confirm('youtube',true)).code,409,'social connection must have a saved preset');
- assert.equal((await confirm('grokbot_webhook',true)).code,200,'webhook is only an operator-marked setup step');
+ assert.equal((await confirm('openrouter',true)).code,200,'OpenRouter is a self-reported local key setup');
+ assert.equal((await confirm('local_browser',true)).code,200,'Local browser installation is self-reported');
  const preset=await call(env,'/api/social-presets','POST',{platform:'youtube',handle:'clipchannel',confirmed_connected:true});
  assert.equal(preset.code,201);
  assert.equal((await confirm('youtube',true)).code,200);
@@ -324,5 +325,5 @@ test('Connect Everything renders actionable first-party links, no fake OAuth cal
  assert.match(app,/\/api\/onboarding/);
  assert.match(app,/self-confirmed, not independently OAuth-verified/);
  assert.match(app,/contentrewards.com\/c\/discover/);
- assert.match(app,/grokbot-dispatch.yml/);
+ assert.match(app,/local_openrouter_agent/);
 });
